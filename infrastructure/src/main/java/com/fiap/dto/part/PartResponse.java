@@ -9,6 +9,7 @@ public record PartResponse(
         String name,
         String description,
         BigDecimal price,
+        // TODO [MS Estoque] REMOVER stockQuantity, reservedStock e minimumStock - dados de estoque nao existem neste MS
         Integer stockQuantity,
         Integer reservedStock,
         Integer minimumStock,

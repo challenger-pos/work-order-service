@@ -18,14 +18,18 @@ public class Part {
 	private String name;
 	private String description;
 	private Money price;
+	// TODO [MS Estoque] REMOVER campo stock - estoque sera gerenciado pelo MS Estoque.
+	//   Part mantem apenas dados cadastrais (nome, descricao, preco).
 	private Stock stock;
 	private OffsetDateTime createdAt;
 	private OffsetDateTime updatedAt;
 
+	// TODO [MS Estoque] REMOVER subtractFromStock() - estoque gerenciado pelo MS Estoque via CMD_RESERVAR na q-estoque-cmd
 	public void subtractFromStock(int quantity) throws BusinessRuleException {
 		this.stock.subtract(quantity);
 	}
 
+	// TODO [MS Estoque] REMOVER returnToStock() - estoque gerenciado pelo MS Estoque via CMD_CANCELAR_RESERVA na q-estoque-cmd
 	public void returnToStock(int quantity) throws BusinessRuleException {
 		this.stock.restore(quantity);
 	}

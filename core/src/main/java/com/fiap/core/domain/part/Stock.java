@@ -3,6 +3,9 @@ package com.fiap.core.domain.part;
 import com.fiap.core.exception.BusinessRuleException;
 import lombok.Getter;
 
+// TODO [MS Estoque] Esta classe inteira migra para o MS Estoque - sera REMOVIDA deste microservico.
+//   Todo gerenciamento de estoque (reserva, baixa, restauracao) sera feito pelo MS Estoque via filas.
+//   Filas: q-estoque-cmd (comandos) e q-os-events (eventos de resposta).
 @Getter
 public class Stock {
 

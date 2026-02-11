@@ -59,10 +59,13 @@ public class ApproveWorkOrderUseCaseImpl implements ApproveWorkOrderUseCase {
             MDC.put("workorder.status", workOrder.getStatus().getDescription());
             logger.info("Approving work order: {} - Parts count: {}", id, workOrder.getWorkOrderParts().size());
 
+            // TODO [MS Estoque] REMOVER workOrder.approveStock() - estoque ja foi reservado pelo MS Estoque.
+            //   Approve apenas muda status para IN_PROGRESS (sem manipular estoque).
             workOrder.approveStock();
             workOrder.setStatus(WorkOrderStatus.IN_PROGRESS);
             workOrder.setApprovedAt(LocalDateTime.now());
 
+            // TODO [MS Estoque] REMOVER bloco abaixo (extrai parts + partGateway.saveAll) - nao manipula mais estoque diretamente
             List<Part> parts = workOrder.getWorkOrderParts().stream()
                     .map(WorkOrderPart::getPart)
                     .toList();

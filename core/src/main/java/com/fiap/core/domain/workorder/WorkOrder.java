@@ -41,6 +41,9 @@ public class WorkOrder {
         this.workOrderParts = workOrderParts;
         this.workOrderServices = workOrderServices;
         this.status = WorkOrderStatus.RECEIVED;
+        // TODO [MS Estoque] Apos criar OS, status deve mudar para AWAITING_STOCK (nao RECEIVED direto).
+        //   Publicar CMD_RESERVAR {workOrderId, itens[{partId, quantity}]} na fila q-estoque-cmd.
+        //   Status so muda para RECEIVED quando EVT_RESERVADO for recebido via q-os-events.
         this.createdAt = LocalDateTime.now();
     }
 
@@ -190,6 +193,9 @@ public class WorkOrder {
         this.totalAmount = totalParts.add(totalServices);
     }
 
+    // TODO [MS Estoque] REMOVER este metodo - reserva de estoque sera feita pelo MS Estoque.
+    //   Substituir por publish CMD_RESERVAR {workOrderId, itens[{partId, quantity}]} na fila q-estoque-cmd.
+    //   A confirmacao chega via EVT_RESERVADO na fila q-os-events.
     public void reserveParts() throws BadRequestException, BusinessRuleException {
         for (WorkOrderPart part : workOrderParts) {
             if (part.getPart().getStock().getStockQuantity() < part.getQuantity()) {
@@ -199,6 +205,8 @@ public class WorkOrder {
         }
     }
 
+    // TODO [MS Estoque] REMOVER este metodo - estoque ja foi reservado pelo MS Estoque quando EVT_RESERVADO foi recebido.
+    //   Na aprovacao, apenas mudar status para IN_PROGRESS (sem manipular estoque).
     public void approveStock() {
         Map<UUID, Integer> totalQuantityByPart = workOrderParts.stream()
                 .collect(Collectors.toMap(
@@ -225,6 +233,8 @@ public class WorkOrder {
         }
     }
 
+    // TODO [MS Estoque] SUBSTITUIR este metodo por publish CMD_CANCELAR_RESERVA {workOrderId} na fila q-estoque-cmd.
+    //   O MS Estoque faz a restauracao do estoque reservado.
     public void restoreStock() throws BusinessRuleException {
         for (WorkOrderPart part : workOrderParts) {
             part.getPart().getStock().restore(part.getQuantity());

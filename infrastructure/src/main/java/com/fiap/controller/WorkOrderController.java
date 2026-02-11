@@ -86,6 +86,8 @@ public class WorkOrderController {
             span.setTag("workorder.id", workOrder.getId().toString());
             span.setTag("workorder.status", workOrder.getStatus().getDescription());
         }
+        // TODO [MS Estoque] Considerar retornar 202 Accepted com status AWAITING_STOCK
+        //   (resposta nao e final, estoque em validacao pelo MS Estoque via fila q-estoque-cmd)
         return ResponseEntity.status(HttpStatus.CREATED).body(workOrderMapper.toResponse(workOrder));
     }
 
@@ -278,4 +280,25 @@ public class WorkOrderController {
         return ResponseEntity.ok(average);
 
     }
+
+    // TODO [MS Estoque + MS Pagamento] NOVOS COMPONENTES necessarios para integracao via filas:
+    //
+    // 1. StockEventProducer (interface em application/gateway/, impl na infrastructure):
+    //    - Publica comandos na fila q-estoque-cmd:
+    //      CMD_RESERVAR {workOrderId, itens[{partId, quantity}]}
+    //      CMD_CANCELAR_RESERVA {workOrderId}
+    //      CMD_EFETIVAR_BAIXA {workOrderId, itens[{partId, quantity}]}
+    //      CMD_REPOR_ESTOQUE {workOrderId, itens[{partId, quantity}]}
+    //
+    // 2. StockEventConsumer (infrastructure):
+    //    - Ouve fila q-os-events, processa:
+    //      EVT_RESERVADO → status RECEIVED (estoque confirmado)
+    //      EVT_FALHA_RESERVA → status REJECTED_STOCK (OS finalizada)
+    //
+    // 3. PaymentEventConsumer (infrastructure):
+    //    - Ouve fila q-pgto-events, processa:
+    //      EVT_PAGAMENTO_CONFIRMADO → status DELIVERED
+    //      EVT_PAGAMENTO_FALHOU → status REFUSED_PAYMENT + CMD_REPOR_ESTOQUE na q-estoque-cmd
+    //
+    // 4. StockEventDTO: payload das mensagens (workOrderId, itens, tipo de comando/evento)
 }

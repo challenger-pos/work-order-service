@@ -38,6 +38,8 @@ public class AddItemsWorkOrderUseCaseImpl implements AddItemsWorkOrderUseCase {
         WorkOrder workOrder = workOrderGateway.findById(workOrderId)
                 .orElseThrow(() -> new NotFoundException(ErrorCodeEnum.WORK0001.getMessage(), ErrorCodeEnum.WORK0001.getCode()));
 
+        // TODO [MS Estoque] REMOVER workOrder.restoreStock() - substituir por publish CMD_CANCELAR_RESERVA
+        //   (cancela reserva anterior) + CMD_RESERVAR (nova reserva com itens atualizados) na fila q-estoque-cmd
         workOrder.restoreStock();
 
         List<UUID> partIds = increaseWorkOrder.getWorkOrderParts().stream()
@@ -64,8 +66,12 @@ public class AddItemsWorkOrderUseCaseImpl implements AddItemsWorkOrderUseCase {
         workOrder.getWorkOrderParts().addAll(workOrderParts);
 
         workOrder.recalculateTotal();
+        // TODO [MS Estoque] REMOVER workOrder.reserveParts() - substituido por CMD_RESERVAR na fila q-estoque-cmd
         workOrder.reserveParts();
+        // TODO [MS Estoque] REMOVER partGateway.saveAll(parts) - stock gerenciado pelo MS Estoque
         partGateway.saveAll(parts);
+        // TODO [MS Estoque] Mudar status para AWAITING_STOCK (mesma interface/consumer do create).
+        //   Quando EVT_RESERVADO chegar via q-os-events, voltar para IN_DIAGNOSIS.
         return workOrderGateway.save(workOrder);
     }
 

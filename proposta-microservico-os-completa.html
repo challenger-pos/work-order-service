@@ -1,0 +1,1715 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plano Completo: Extracao do Microservico de OS (Ordem de Servico)</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --success: #16a34a;
+            --warning: #ca8a04;
+            --danger: #dc2626;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--gray-800);
+            background: var(--gray-50);
+        }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+
+        header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 3rem 2rem;
+            margin-bottom: 2rem;
+        }
+
+        header h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+        header p { opacity: 0.9; font-size: 1.1rem; }
+
+        section {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            color: var(--gray-900);
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--primary);
+        }
+
+        h3 {
+            color: var(--gray-800);
+            font-size: 1.25rem;
+            margin: 1.5rem 0 1rem;
+        }
+
+        h4 {
+            color: var(--gray-700);
+            font-size: 1.1rem;
+            margin: 1rem 0 0.5rem;
+        }
+
+        p { margin-bottom: 1rem; color: var(--gray-600); }
+
+        .diagram {
+            background: var(--gray-900);
+            color: #10b981;
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.8rem;
+            line-height: 1.3;
+            margin: 1rem 0;
+            white-space: pre;
+        }
+
+        .code-block {
+            background: var(--gray-800);
+            color: #e5e7eb;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.85rem;
+            margin: 1rem 0;
+            white-space: pre-wrap;
+        }
+
+        .code-block.java { color: #93c5fd; }
+        .code-block.json { color: #fbbf24; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+        }
+
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        th {
+            background: var(--gray-100);
+            font-weight: 600;
+            color: var(--gray-700);
+        }
+
+        tr:hover { background: var(--gray-50); }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-success { background: #dcfce7; color: #166534; }
+        .badge-warning { background: #fef3c7; color: #92400e; }
+        .badge-danger { background: #fee2e2; color: #991b1b; }
+        .badge-info { background: #dbeafe; color: #1e40af; }
+
+        .decisions-box {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-left: 4px solid var(--success);
+        }
+
+        .decisions-box h2 {
+            color: var(--success);
+            margin-bottom: 1rem;
+            border-bottom: none;
+        }
+
+        .decision-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0;
+        }
+
+        .decision-item::before {
+            content: "✓";
+            color: var(--success);
+            font-weight: bold;
+        }
+
+        ul, ol { margin: 1rem 0; padding-left: 1.5rem; }
+        li { margin-bottom: 0.5rem; color: var(--gray-600); }
+
+        .highlight {
+            background: #fef3c7;
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid var(--warning);
+            margin: 1rem 0;
+        }
+
+        .toc {
+            background: var(--gray-100);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+        }
+
+        .toc h3 { margin-top: 0; }
+        .toc ul { list-style: none; padding: 0; columns: 2; }
+        .toc li { padding: 0.25rem 0; }
+        .toc a { color: var(--primary); text-decoration: none; }
+        .toc a:hover { text-decoration: underline; }
+
+        .checklist { list-style: none; padding: 0; }
+        .checklist li { padding: 0.5rem 0; padding-left: 1.5rem; position: relative; }
+        .checklist li::before { content: '☐'; position: absolute; left: 0; }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--gray-600);
+            font-size: 0.9rem;
+        }
+
+        @media print {
+            body { background: white; }
+            section { box-shadow: none; border: 1px solid var(--gray-200); break-inside: avoid; }
+            .diagram { font-size: 0.65rem; }
+        }
+
+        hr { border: none; border-top: 1px solid var(--gray-200); margin: 2rem 0; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Plano de Extracao do Microservico de OS</h1>
+            <p>Ordem de Servico - Documento Completo</p>
+            <p style="margin-top: 1rem; opacity: 0.7;">Data: 29/01/2026 | Projeto: ChallengeOne</p>
+        </div>
+    </header>
+
+    <div class="container">
+
+        <!-- DECISOES TOMADAS -->
+        <div class="decisions-box">
+            <h2>Decisoes Tomadas</h2>
+            <div class="decision-item"><strong>Arquitetura Final:</strong> 3 microservicos - OS, Parts, Pagamento</div>
+            <div class="decision-item"><strong>Comunicacao:</strong> Amazon SQS para eventos assincronos</div>
+            <div class="decision-item"><strong>Foco:</strong> Entender o fluxo de negocio e onde as filas sao necessarias</div>
+        </div>
+
+        <!-- INDICE -->
+        <nav class="toc">
+            <h3>Indice Completo</h3>
+            <ul>
+                <li><a href="#fluxo-negocio">Fluxo de Negocio da OS (Atual)</a></li>
+                <li><a href="#mapeamento">Mapeamento: Onde Cada Servico e Necessario</a></li>
+                <li><a href="#decisoes-definidas">Decisoes Definidas</a></li>
+                <li><a href="#novo-fluxo">Novo Fluxo com 3 Microservicos + Filas</a></li>
+                <li><a href="#filas-sqs">Filas SQS Necessarias</a></li>
+                <li><a href="#callback">Como OS Service Recebe os Dados de Volta</a></li>
+                <li><a href="#novos-status">Novos Status para Suportar Fluxo Assincrono</a></li>
+                <li><a href="#vantagens">Vantagens desta Arquitetura</a></li>
+                <li><a href="#problemas-arquitetura">Problemas e Desafios desta Arquitetura</a></li>
+                <li><a href="#resumo-executivo">Resumo Executivo</a></li>
+                <li><a href="#arquivos-afetados">Arquivos do Monolito que Serao Afetados</a></li>
+                <li><a href="#estado-atual">1. Estado Atual do Monolito</a></li>
+                <li><a href="#analise-endpoints">2. Analise de Processamento Assincrono por Endpoint</a></li>
+                <li><a href="#maior-problema">3. O Maior Problema: Gestao de Estoque</a></li>
+                <li><a href="#problemas-discussao">4. Problemas e Desafios para Discussao</a></li>
+                <li><a href="#fases">5. Fases Propostas para Implementacao</a></li>
+                <li><a href="#arquivos-criticos">6. Arquivos Criticos que Serao Afetados</a></li>
+                <li><a href="#riscos">7. Riscos e Mitigacoes</a></li>
+                <li><a href="#questoes-pendentes">8. Questoes Pendentes para Discussao</a></li>
+                <li><a href="#proximos-passos">9. Proximos Passos Recomendados</a></li>
+                <li><a href="#estrutura-mensagens">10. Estrutura de Mensagens SQS (Proposta)</a></li>
+            </ul>
+        </nav>
+
+        <!-- FLUXO DE NEGOCIO DA OS (ATUAL) -->
+        <section id="fluxo-negocio">
+            <h2>Fluxo de Negocio da OS (Atual)</h2>
+
+            <h3>Ciclo de Vida Completo de uma OS</h3>
+
+            <div class="diagram">┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                           FLUXO ATUAL DA ORDEM DE SERVICO                               │
+├─────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                         │
+│  CLIENTE CHEGA       DIAGNOSTICO         ORCAMENTO           EXECUCAO        ENTREGA   │
+│  NA OFICINA          DO VEICULO          APROVADO            DO SERVICO                │
+│       │                  │                  │                    │              │       │
+│       ▼                  ▼                  ▼                    ▼              ▼       │
+│  ┌─────────┐      ┌─────────────┐    ┌─────────────┐      ┌───────────┐   ┌──────────┐ │
+│  │RECEIVED │ ──▶  │IN_DIAGNOSIS │ ─▶ │AWAITING_    │ ──▶  │IN_PROGRESS│ ─▶│COMPLETED │ │
+│  │         │      │             │    │APPROVAL     │      │           │   │          │ │
+│  └─────────┘      └─────────────┘    └─────────────┘      └───────────┘   └──────────┘ │
+│       │                  │                  │                    │              │       │
+│   Cria OS           Mecanico          Cliente               Mecanico        Cliente    │
+│   + Reserva         diagnostica       aprova ou             executa         retira     │
+│   estoque           + adiciona        recusa                servico         veiculo    │
+│   inicial           pecas/servicos                                                     │
+│                                             │                                          │
+│                                             ▼                                          │
+│                                       ┌───────────┐                                    │
+│                                       │ REFUSED   │ (se recusar)                       │
+│                                       │(COMPLETED)│                                    │
+│                                       └───────────┘                                    │
+│                                             │                                          │
+│                                         Restaura                                       │
+│                                         estoque                                        │
+│                                                                                        │
+└─────────────────────────────────────────────────────────────────────────────────────────┘</div>
+
+            <h3>Detalhamento de Cada Etapa</h3>
+
+            <h4>1. CREATE (RECEIVED) - Chegada do cliente</h4>
+            <div class="code-block">Acao do usuario: Atendente registra OS no sistema
+Dados necessarios: Cliente, Veiculo, Usuario que criou, Pecas iniciais, Servicos iniciais
+
+FLUXO ATUAL:
+1. Valida se Customer existe        → Precisa de CUSTOMER (leitura)
+2. Valida se Vehicle existe         → Precisa de VEHICLE (leitura)
+3. Valida se User existe            → Precisa de USER (leitura)
+4. Busca Parts (preco, estoque)     → Precisa de PARTS (leitura + escrita)
+5. Busca Services (preco)           → Precisa de SERVICES (leitura)
+6. Reserva estoque das pecas        → MODIFICA PARTS (escrita)
+7. Calcula total
+8. Salva OS com status RECEIVED
+9. Salva historico
+
+DEPENDENCIAS:
+├── Customer Service (leitura) - validacao
+├── Vehicle Service (leitura) - validacao
+├── User Service (leitura) - validacao
+├── Parts Service (leitura + ESCRITA) - busca preco + RESERVA ESTOQUE
+└── Services Service (leitura) - busca preco</div>
+
+            <h4>2. ASSIGN MECHANIC (IN_DIAGNOSIS) - Atribuir mecanico</h4>
+            <div class="code-block">Acao do usuario: Gerente atribui mecanico a OS
+Dados necessarios: ID da OS, ID do mecanico
+
+FLUXO ATUAL:
+1. Valida se OS existe e esta em RECEIVED
+2. Valida se mecanico existe e tem role MECHANIC  → Precisa de USER (leitura)
+3. Atualiza OS com mecanico
+4. Muda status para IN_DIAGNOSIS
+5. Salva historico
+
+DEPENDENCIAS:
+└── User Service (leitura) - validacao do mecanico</div>
+
+            <h4>3. UPDATE ITEMS - Adicionar pecas/servicos durante diagnostico</h4>
+            <div class="code-block">Acao do usuario: Mecanico adiciona pecas/servicos que identificou
+Dados necessarios: ID da OS, lista de pecas/servicos
+
+FLUXO ATUAL:
+1. Valida se OS existe
+2. Restaura estoque anterior         → MODIFICA PARTS (escrita)
+3. Busca novas Parts (preco, estoque)
+4. Busca novos Services (preco)
+5. Reserva novo estoque              → MODIFICA PARTS (escrita)
+6. Recalcula total
+7. Atualiza OS
+
+DEPENDENCIAS:
+├── Parts Service (leitura + ESCRITA) - restaura antigo + reserva novo
+└── Services Service (leitura) - busca preco</div>
+
+            <h4>4. UPDATE STATUS → AWAITING_APPROVAL</h4>
+            <div class="code-block">Acao do usuario: Mecanico finaliza diagnostico
+Dados necessarios: ID da OS, novo status
+
+FLUXO ATUAL:
+1. Valida se OS existe
+2. Valida transicao de status valida
+3. Atualiza status
+4. Salva historico
+
+DEPENDENCIAS: Nenhuma externa (apenas OS)</div>
+
+            <h4>5. APPROVE (IN_PROGRESS) - Cliente aprova orcamento</h4>
+            <div class="code-block">Acao do usuario: Cliente aprova execucao do servico
+Dados necessarios: ID da OS, documentNumber do cliente (do JWT)
+
+FLUXO ATUAL:
+1. Valida se OS existe e esta em AWAITING_APPROVAL
+2. Valida se documentNumber confere com cliente da OS
+3. Confirma consumo do estoque reservado  → MODIFICA PARTS (escrita)
+4. Muda status para IN_PROGRESS
+5. Salva approvedAt
+6. Salva historico
+
+DEPENDENCIAS:
+└── Parts Service (ESCRITA) - confirma consumo do estoque
+
+*** PAGAMENTO DEVERIA ENTRAR AQUI? ***</div>
+
+            <h4>6. REFUSE (COMPLETED) - Cliente recusa orcamento</h4>
+            <div class="code-block">Acao do usuario: Cliente recusa o orcamento
+Dados necessarios: ID da OS, documentNumber do cliente
+
+FLUXO ATUAL:
+1. Valida se OS existe e esta em AWAITING_APPROVAL
+2. Valida se documentNumber confere
+3. Restaura estoque reservado         → MODIFICA PARTS (escrita)
+4. Muda status para COMPLETED
+5. Salva finishedAt
+6. Salva historico
+
+DEPENDENCIAS:
+└── Parts Service (ESCRITA) - restaura estoque</div>
+
+            <h4>7. UPDATE STATUS → COMPLETED/DELIVERED</h4>
+            <div class="code-block">Acao do usuario: Mecanico finaliza / Cliente retira
+DEPENDENCIAS: Nenhuma externa
+
+*** PAGAMENTO DEVERIA ENTRAR AQUI? ***</div>
+        </section>
+
+        <!-- MAPEAMENTO -->
+        <section id="mapeamento">
+            <h2>Mapeamento: Onde Cada Servico e Necessario</h2>
+
+            <div class="diagram">┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                        INTERACOES ENTRE OS 3 MICROSERVICOS                              │
+├─────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                         │
+│                              ┌──────────────────┐                                       │
+│                              │   OS SERVICE     │                                       │
+│                              │                  │                                       │
+│                              │ - WorkOrder      │                                       │
+│                              │ - WorkOrderPart  │                                       │
+│                              │ - WorkOrderSvc   │                                       │
+│                              │ - History        │                                       │
+│                              └────────┬─────────┘                                       │
+│                                       │                                                 │
+│              ┌────────────────────────┼────────────────────────┐                        │
+│              │                        │                        │                        │
+│              ▼                        ▼                        ▼                        │
+│    ┌──────────────────┐    ┌──────────────────┐    ┌──────────────────┐                │
+│    │  PARTS SERVICE   │    │ PAYMENT SERVICE  │    │ (outros: User,   │                │
+│    │                  │    │                  │    │  Customer, etc)  │                │
+│    │ - Part           │    │ - ???            │    │                  │                │
+│    │ - Stock          │    │ - ???            │    │ (ficam no mono-  │                │
+│    │ - Price          │    │                  │    │  lito por ora)   │                │
+│    └──────────────────┘    └──────────────────┘    └──────────────────┘                │
+│                                                                                         │
+└─────────────────────────────────────────────────────────────────────────────────────────┘</div>
+
+            <h3>Matriz de Dependencias por Operacao</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Operacao</th>
+                        <th>Parts (Leitura)</th>
+                        <th>Parts (Escrita)</th>
+                        <th>Payment</th>
+                        <th>User/Customer</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>CREATE</td>
+                        <td><span class="badge badge-success">Sim (preco)</span></td>
+                        <td><span class="badge badge-danger">Sim (reserva)</span></td>
+                        <td><span class="badge badge-info">Nao</span></td>
+                        <td><span class="badge badge-success">Sim (validacao)</span></td>
+                    </tr>
+                    <tr>
+                        <td>ASSIGN MECHANIC</td>
+                        <td><span class="badge badge-info">Nao</span></td>
+                        <td><span class="badge badge-info">Nao</span></td>
+                        <td><span class="badge badge-info">Nao</span></td>
+                        <td><span class="badge badge-success">Sim (validacao)</span></td>
+                    </tr>
+                    <tr>
+                        <td>UPDATE ITEMS</td>
+                        <td><span class="badge badge-success">Sim (preco)</span></td>
+                        <td><span class="badge badge-danger">Sim (ajuste)</span></td>
+                        <td><span class="badge badge-info">Nao</span></td>
+                        <td><span class="badge badge-info">Nao</span></td>
+                    </tr>
+                    <tr>
+                        <td>UPDATE STATUS</td>
+                        <td><span class="badge badge-info">Nao</span></td>
+                        <td><span class="badge badge-info">Nao</span></td>
+                        <td><span class="badge badge-info">Nao</span></td>
+                        <td><span class="badge badge-info">Nao</span></td>
+                    </tr>
+                    <tr>
+                        <td>APPROVE</td>
+                        <td><span class="badge badge-info">Nao</span></td>
+                        <td><span class="badge badge-danger">Sim (confirma)</span></td>
+                        <td><span class="badge badge-warning">?</span></td>
+                        <td><span class="badge badge-info">Nao</span></td>
+                    </tr>
+                    <tr>
+                        <td>REFUSE</td>
+                        <td><span class="badge badge-info">Nao</span></td>
+                        <td><span class="badge badge-danger">Sim (restaura)</span></td>
+                        <td><span class="badge badge-info">Nao</span></td>
+                        <td><span class="badge badge-info">Nao</span></td>
+                    </tr>
+                    <tr>
+                        <td>DELIVERED</td>
+                        <td><span class="badge badge-info">Nao</span></td>
+                        <td><span class="badge badge-info">Nao</span></td>
+                        <td><span class="badge badge-warning">?</span></td>
+                        <td><span class="badge badge-info">Nao</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- DECISOES DEFINIDAS -->
+        <section id="decisoes-definidas">
+            <h2>Decisoes Definidas</h2>
+            <ul>
+                <li><strong>Pagamento:</strong> No DELIVERED (modelo oficina tradicional - cliente paga ao retirar)</li>
+                <li><strong>Estoque:</strong> Totalmente assincrono (cria OS, reserva em background, notifica se faltar)</li>
+                <li><strong>Frontend:</strong> Decidir depois (comecar com polling simples, evoluir se necessario)</li>
+                <li><strong>Ordem de extracao:</strong> OS primeiro → Parts → Payment</li>
+            </ul>
+        </section>
+
+        <!-- NOVO FLUXO COM 3 MICROSERVICOS + FILAS -->
+        <section id="novo-fluxo">
+            <h2>Novo Fluxo com 3 Microservicos + Filas</h2>
+
+            <div class="diagram">┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                         FLUXO COM COMUNICACAO ASSINCRONA (SQS)                          │
+├─────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                         │
+│  ┌─────────────────────────────────────────────────────────────────────────────────┐   │
+│  │ 1. CREATE OS                                                                     │   │
+│  ├─────────────────────────────────────────────────────────────────────────────────┤   │
+│  │                                                                                  │   │
+│  │   Cliente ──▶ OS Service ──▶ Cria OS (PENDING_STOCK) ──▶ Retorna 201 + ID       │   │
+│  │                    │                                                             │   │
+│  │                    │ Publica na fila                                             │   │
+│  │                    ▼                                                             │   │
+│  │            ┌──────────────────┐                                                  │   │
+│  │            │ SQS: os-stock-   │                                                  │   │
+│  │            │ reservation      │                                                  │   │
+│  │            └────────┬─────────┘                                                  │   │
+│  │                     │                                                            │   │
+│  │                     ▼                                                            │   │
+│  │              Parts Service ──▶ Verifica estoque ──▶ Reserva                      │   │
+│  │                    │                                                             │   │
+│  │                    │ Publica resposta                                            │   │
+│  │                    ▼                                                             │   │
+│  │            ┌──────────────────┐                                                  │   │
+│  │            │ SQS: os-stock-   │                                                  │   │
+│  │            │ response         │                                                  │   │
+│  │            └────────┬─────────┘                                                  │   │
+│  │                     │                                                            │   │
+│  │                     ▼                                                            │   │
+│  │              OS Service ──▶ Atualiza status para RECEIVED                        │   │
+│  │                           OU                                                     │   │
+│  │                           ──▶ Atualiza status para STOCK_UNAVAILABLE             │   │
+│  │                                                                                  │   │
+│  └─────────────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                         │
+│  ┌─────────────────────────────────────────────────────────────────────────────────┐   │
+│  │ 2. ASSIGN MECHANIC → IN_DIAGNOSIS                                               │   │
+│  ├─────────────────────────────────────────────────────────────────────────────────┤   │
+│  │   Interno do OS Service - Sem fila (operacao simples)                            │   │
+│  └─────────────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                         │
+│  ┌─────────────────────────────────────────────────────────────────────────────────┐   │
+│  │ 3. UPDATE ITEMS (adicionar pecas durante diagnostico)                           │   │
+│  ├─────────────────────────────────────────────────────────────────────────────────┤   │
+│  │                                                                                  │   │
+│  │   Mecanico ──▶ OS Service ──▶ Atualiza itens ──▶ Retorna 200                    │   │
+│  │                    │                                                             │   │
+│  │                    │ Publica ajuste de estoque                                   │   │
+│  │                    ▼                                                             │   │
+│  │            ┌──────────────────┐                                                  │   │
+│  │            │ SQS: os-stock-   │                                                  │   │
+│  │            │ adjustment       │ (restaura antigos, reserva novos)                │   │
+│  │            └────────┬─────────┘                                                  │   │
+│  │                     │                                                            │   │
+│  │                     ▼                                                            │   │
+│  │              Parts Service ──▶ Ajusta reservas                                   │   │
+│  │                                                                                  │   │
+│  └─────────────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                         │
+│  ┌─────────────────────────────────────────────────────────────────────────────────┐   │
+│  │ 4. APPROVE → IN_PROGRESS                                                        │   │
+│  ├─────────────────────────────────────────────────────────────────────────────────┤   │
+│  │                                                                                  │   │
+│  │   Cliente ──▶ OS Service ──▶ Valida + Muda status ──▶ Retorna 200               │   │
+│  │                    │                                                             │   │
+│  │                    │ Publica confirmacao                                         │   │
+│  │                    ▼                                                             │   │
+│  │            ┌──────────────────┐                                                  │   │
+│  │            │ SQS: os-stock-   │                                                  │   │
+│  │            │ consumption      │ (confirma que estoque foi usado)                 │   │
+│  │            └────────┬─────────┘                                                  │   │
+│  │                     │                                                            │   │
+│  │                     ▼                                                            │   │
+│  │              Parts Service ──▶ Consolida consumo (remove reserva)                │   │
+│  │                                                                                  │   │
+│  └─────────────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                         │
+│  ┌─────────────────────────────────────────────────────────────────────────────────┐   │
+│  │ 5. REFUSE → COMPLETED                                                           │   │
+│  ├─────────────────────────────────────────────────────────────────────────────────┤   │
+│  │                                                                                  │   │
+│  │   Cliente ──▶ OS Service ──▶ Valida + Muda status ──▶ Retorna 200               │   │
+│  │                    │                                                             │   │
+│  │                    │ Publica restauracao                                         │   │
+│  │                    ▼                                                             │   │
+│  │            ┌──────────────────┐                                                  │   │
+│  │            │ SQS: os-stock-   │                                                  │   │
+│  │            │ restoration      │ (devolve estoque)                                │   │
+│  │            └────────┬─────────┘                                                  │   │
+│  │                     │                                                            │   │
+│  │                     ▼                                                            │   │
+│  │              Parts Service ──▶ Restaura estoque                                  │   │
+│  │                                                                                  │   │
+│  └─────────────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                         │
+│  ┌─────────────────────────────────────────────────────────────────────────────────┐   │
+│  │ 6. COMPLETED → DELIVERED (+ PAGAMENTO)                                          │   │
+│  ├─────────────────────────────────────────────────────────────────────────────────┤   │
+│  │                                                                                  │   │
+│  │   Atendente ──▶ OS Service ──▶ Muda status COMPLETED ──▶ Publica evento         │   │
+│  │                                     │                                            │   │
+│  │                                     │ Publica                                    │   │
+│  │                                     ▼                                            │   │
+│  │                             ┌──────────────────┐                                 │   │
+│  │                             │ SQS: os-ready-   │                                 │   │
+│  │                             │ for-payment      │                                 │   │
+│  │                             └────────┬─────────┘                                 │   │
+│  │                                      │                                           │   │
+│  │                                      ▼                                           │   │
+│  │                            Payment Service ──▶ Processa pagamento                │   │
+│  │                                      │                                           │   │
+│  │                                      │ Publica resultado                         │   │
+│  │                                      ▼                                           │   │
+│  │                             ┌──────────────────┐                                 │   │
+│  │                             │ SQS: os-payment- │                                 │   │
+│  │                             │ completed        │                                 │   │
+│  │                             └────────┬─────────┘                                 │   │
+│  │                                      │                                           │   │
+│  │                                      ▼                                           │   │
+│  │                               OS Service ──▶ Muda status DELIVERED               │   │
+│  │                                                                                  │   │
+│  └─────────────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                         │
+└─────────────────────────────────────────────────────────────────────────────────────────┘</div>
+        </section>
+
+        <!-- FILAS SQS NECESSARIAS -->
+        <section id="filas-sqs">
+            <h2>Filas SQS Necessarias</h2>
+
+            <div class="diagram">┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                                    MAPA DE FILAS                                        │
+├─────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                         │
+│  OS SERVICE → PARTS SERVICE:                                                            │
+│  ├── os-stock-reservation     (CREATE: reservar estoque)                                │
+│  ├── os-stock-adjustment      (UPDATE ITEMS: ajustar reservas)                          │
+│  ├── os-stock-consumption     (APPROVE: confirmar consumo)                              │
+│  └── os-stock-restoration     (REFUSE: devolver estoque)                                │
+│                                                                                         │
+│  PARTS SERVICE → OS SERVICE:                                                            │
+│  └── os-stock-response        (resposta de todas operacoes de estoque)                  │
+│                                                                                         │
+│  OS SERVICE → PAYMENT SERVICE:                                                          │
+│  └── os-ready-for-payment     (COMPLETED: pronto para pagamento)                        │
+│                                                                                         │
+│  PAYMENT SERVICE → OS SERVICE:                                                          │
+│  └── os-payment-completed     (pagamento processado)                                    │
+│                                                                                         │
+│  DEAD LETTER QUEUES (DLQ):                                                              │
+│  ├── os-stock-dlq            (falhas de estoque)                                        │
+│  └── os-payment-dlq          (falhas de pagamento)                                      │
+│                                                                                         │
+│  TOTAL: 8 filas + 2 DLQs = 10 filas                                                     │
+│                                                                                         │
+└─────────────────────────────────────────────────────────────────────────────────────────┘</div>
+        </section>
+
+        <!-- COMO OS SERVICE RECEBE OS DADOS DE VOLTA -->
+        <section id="callback">
+            <h2>Como OS Service Recebe os Dados de Volta (Resposta a Sua Pergunta)</h2>
+
+            <div class="highlight">
+                <p><strong>Voce perguntou:</strong> <em>"Um Broker nao resolve o problema de como vamos receber os dados?"</em></p>
+                <p><strong>Sim, o broker (SQS) resolve!</strong> Funciona assim:</p>
+            </div>
+
+            <h3>Padrao: Publish-Subscribe com Callback Queue</h3>
+
+            <div class="diagram">┌──────────────────────────────────────────────────────────────────────────────┐
+│                                                                              │
+│  1. OS Service PUBLICA mensagem                                              │
+│     ┌─────────────────────────────────────────────────────────────────┐     │
+│     │ {                                                                │     │
+│     │   "workOrderId": "123",                                          │     │
+│     │   "parts": [{"partId": "abc", "quantity": 2}],                   │     │
+│     │   "correlationId": "req-456"                                     │     │
+│     │ }                                                                │     │
+│     └─────────────────────────────────────────────────────────────────┘     │
+│                          │                                                   │
+│                          ▼                                                   │
+│                   SQS: os-stock-reservation                                  │
+│                          │                                                   │
+│                          ▼                                                   │
+│  2. Parts Service CONSOME e processa                                         │
+│                          │                                                   │
+│                          ▼                                                   │
+│  3. Parts Service PUBLICA resposta                                           │
+│     ┌─────────────────────────────────────────────────────────────────┐     │
+│     │ {                                                                │     │
+│     │   "workOrderId": "123",                                          │     │
+│     │   "correlationId": "req-456",                                    │     │
+│     │   "success": true,                                               │     │
+│     │   "reservationId": "res-789"                                     │     │
+│     │ }                                                                │     │
+│     └─────────────────────────────────────────────────────────────────┘     │
+│                          │                                                   │
+│                          ▼                                                   │
+│                   SQS: os-stock-response                                     │
+│                          │                                                   │
+│                          ▼                                                   │
+│  4. OS Service tem um CONSUMER (worker) que fica escutando a fila            │
+│     - Quando chega mensagem, processa e atualiza a OS no banco               │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘</div>
+
+            <h3>O OS Service precisa ter dois componentes:</h3>
+
+            <div class="diagram">┌─────────────────────────────────────────────────────────────────────────────┐
+│                           OS SERVICE                                        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌─────────────────────┐              ┌─────────────────────┐              │
+│  │    REST API         │              │    SQS CONSUMERS    │              │
+│  │    (Controller)     │              │    (Workers)        │              │
+│  ├─────────────────────┤              ├─────────────────────┤              │
+│  │                     │              │                     │              │
+│  │ POST /work-orders   │              │ @SqsListener        │              │
+│  │ GET /work-orders/id │              │ ("os-stock-response")│             │
+│  │ PATCH /approve      │              │                     │              │
+│  │ etc...              │              │ Quando chega msg:   │              │
+│  │                     │              │ - Busca OS pelo ID  │              │
+│  │ Publica na fila ──────────────────▶│ - Atualiza status   │              │
+│  │                     │              │ - Salva historico   │              │
+│  └─────────────────────┘              └─────────────────────┘              │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘</div>
+        </section>
+
+        <!-- NOVOS STATUS PARA SUPORTAR FLUXO ASSINCRONO -->
+        <section id="novos-status">
+            <h2>Novos Status para Suportar Fluxo Assincrono</h2>
+
+            <div class="code-block java">public enum WorkOrderStatus {
+    // Status de processamento
+    PENDING_STOCK("Aguardando estoque"),         // Apos CREATE, antes de Parts confirmar
+    STOCK_UNAVAILABLE("Estoque indisponivel"),   // Parts informou que nao tem
+
+    // Status existentes
+    RECEIVED("Recebido"),                        // Parts confirmou estoque
+    IN_DIAGNOSIS("Em diagnostico"),
+    AWAITING_APPROVAL("Aguardando aprovacao"),
+    REFUSED("Recusado"),
+    IN_PROGRESS("Em andamento"),
+    COMPLETED("Finalizado"),
+
+    // Novos status para pagamento
+    AWAITING_PAYMENT("Aguardando pagamento"),    // Apos COMPLETED, antes de pagar
+    PAYMENT_FAILED("Falha no pagamento"),        // Pagamento nao processou
+    DELIVERED("Entregue")                        // Pago e entregue
+}</div>
+        </section>
+
+        <!-- VANTAGENS DESTA ARQUITETURA -->
+        <section id="vantagens">
+            <h2>Vantagens desta Arquitetura</h2>
+            <ol>
+                <li><strong>Desacoplamento total:</strong> OS nao precisa esperar Parts ou Payment</li>
+                <li><strong>Resiliencia:</strong> Se Parts cair, mensagens acumulam no SQS e processam depois</li>
+                <li><strong>Escalabilidade:</strong> Cada servico escala independentemente</li>
+                <li><strong>Rastreabilidade:</strong> correlationId permite rastrear fluxo completo</li>
+                <li><strong>Retry automatico:</strong> SQS tenta novamente em caso de falha</li>
+                <li><strong>Dead Letter Queue:</strong> Falhas persistentes vao para DLQ para analise</li>
+            </ol>
+        </section>
+
+        <!-- PROBLEMAS E DESAFIOS DESTA ARQUITETURA -->
+        <section id="problemas-arquitetura">
+            <h2>Problemas e Desafios desta Arquitetura</h2>
+
+            <h3>1. Como o FRONTEND sabe que a OS foi confirmada?</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Opcao</th>
+                        <th>Implementacao</th>
+                        <th>Complexidade</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Polling</td>
+                        <td>GET /work-orders/{id} a cada X segundos</td>
+                        <td>Baixa</td>
+                    </tr>
+                    <tr>
+                        <td>WebSocket</td>
+                        <td>Conexao persistente para notificacoes</td>
+                        <td>Media</td>
+                    </tr>
+                    <tr>
+                        <td>Server-Sent Events</td>
+                        <td>Stream unidirecional do server</td>
+                        <td>Media</td>
+                    </tr>
+                    <tr>
+                        <td>Push notification</td>
+                        <td>Para mobile</td>
+                        <td>Alta</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>2. E se a mensagem for processada duas vezes?</h3>
+            <p><strong>Solucao: Idempotencia</strong></p>
+            <ul>
+                <li>Cada mensagem tem um <code>idempotencyKey</code></li>
+                <li>Antes de processar, verifica se ja processou</li>
+                <li>Se ja processou, ignora</li>
+            </ul>
+
+            <h3>3. E se Parts demorar muito para responder?</h3>
+            <p><strong>Solucao: Timeout + Compensacao</strong></p>
+            <ul>
+                <li>OS tem um job que verifica OS em PENDING_STOCK ha mais de X minutos</li>
+                <li>Notifica administrador ou muda para status de erro</li>
+            </ul>
+
+            <h3>4. Qual a ordem de migracao?</h3>
+            <p><strong>Decisao: OS primeiro</strong></p>
+
+            <div class="diagram">┌────────────────────────────────────────────────────────────────────────────┐
+│                         ROADMAP DE MIGRACAO                                │
+├────────────────────────────────────────────────────────────────────────────┤
+│                                                                            │
+│  FASE 1: Preparacao do Monolito                                            │
+│  ├── Adicionar Spring Cloud AWS (SQS) ao monolito                          │
+│  ├── Criar as filas no AWS                                                 │
+│  ├── Implementar producers/consumers no monolito                           │
+│  └── Testar comunicacao via filas (OS ↔ Parts dentro do monolito)          │
+│                                                                            │
+│  FASE 2: Extrair OS Service                                                │
+│  ├── Criar novo projeto workorder-service                                  │
+│  ├── Copiar codigo de OS (domain, usecase, controller)                     │
+│  ├── Implementar ACL (clients HTTP para Customer, Vehicle, User)           │
+│  ├── Implementar producers SQS (para Parts no monolito)                    │
+│  ├── Implementar consumers SQS (receber respostas)                         │
+│  ├── Migrar banco (schema separado ou banco proprio)                       │
+│  └── Fazer cutover (desviar trafego para novo servico)                     │
+│                                                                            │
+│  FASE 3: Extrair Parts Service                                             │
+│  ├── Criar novo projeto parts-service                                      │
+│  ├── Copiar codigo de Parts (domain, usecase, controller)                  │
+│  ├── Implementar consumers SQS (receber pedidos de OS)                     │
+│  ├── Implementar producers SQS (enviar respostas)                          │
+│  └── Fazer cutover                                                         │
+│                                                                            │
+│  FASE 4: Extrair Payment Service                                           │
+│  ├── Criar novo projeto payment-service                                    │
+│  ├── Implementar logica de pagamento (nao existe ainda!)                   │
+│  ├── Implementar consumers/producers SQS                                   │
+│  └── Integrar com gateway de pagamento                                     │
+│                                                                            │
+└────────────────────────────────────────────────────────────────────────────┘</div>
+        </section>
+
+        <!-- RESUMO EXECUTIVO -->
+        <section id="resumo-executivo">
+            <h2>Resumo Executivo</h2>
+
+            <h3>O que temos hoje (Monolito)</h3>
+            <ul>
+                <li>Spring Boot 3.5.5 com Clean Architecture</li>
+                <li>PostgreSQL 16 com Liquibase</li>
+                <li>11 endpoints de OS</li>
+                <li>Estoque manipulado diretamente (sincrono)</li>
+                <li>Sem fluxo de pagamento</li>
+            </ul>
+
+            <h3>O que teremos (3 Microservicos)</h3>
+            <ul>
+                <li><strong>OS Service:</strong> Gerencia ordens de servico</li>
+                <li><strong>Parts Service:</strong> Gerencia estoque e pecas</li>
+                <li><strong>Payment Service:</strong> Processa pagamentos (a ser criado)</li>
+                <li>Comunicacao via Amazon SQS (assincrono)</li>
+                <li>Cada servico com seu proprio banco</li>
+            </ul>
+
+            <h3>Principais mudancas no fluxo</h3>
+            <ol>
+                <li>CREATE retorna 201 imediato, estoque reserva em background</li>
+                <li>APPROVE/REFUSE atualizam status imediato, estoque ajusta em background</li>
+                <li>DELIVERED so acontece apos Payment Service confirmar pagamento</li>
+                <li>Novos status: PENDING_STOCK, STOCK_UNAVAILABLE, AWAITING_PAYMENT</li>
+            </ol>
+
+            <h3>Filas SQS necessarias</h3>
+            <ul>
+                <li>4 filas OS → Parts (reservation, adjustment, consumption, restoration)</li>
+                <li>1 fila Parts → OS (response)</li>
+                <li>1 fila OS → Payment (ready-for-payment)</li>
+                <li>1 fila Payment → OS (payment-completed)</li>
+                <li>2 DLQs (stock-dlq, payment-dlq)</li>
+                <li><strong>Total: 10 filas</strong></li>
+            </ul>
+
+            <h3>Riscos identificados</h3>
+            <ol>
+                <li>Consistencia eventual (cliente ve status intermediario)</li>
+                <li>Mensagens duplicadas (precisa idempotencia)</li>
+                <li>Timeout de operacoes (precisa compensacao)</li>
+                <li>Complexidade de debug (rastreamento distribuido)</li>
+            </ol>
+
+            <h3>Proximos passos imediatos</h3>
+            <ol>
+                <li>Desenhar contratos das mensagens SQS (JSON schema)</li>
+                <li>Criar POC de comunicacao via SQS no monolito</li>
+                <li>Definir estrategia de polling para frontend</li>
+                <li>Planejar migracao de banco de dados</li>
+            </ol>
+        </section>
+
+        <!-- ARQUIVOS DO MONOLITO QUE SERAO AFETADOS -->
+        <section id="arquivos-afetados">
+            <h2>Arquivos do Monolito que Serao Afetados</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Arquivo</th>
+                        <th>Mudanca</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>pom.xml</code> (infrastructure)</td>
+                        <td>Adicionar spring-cloud-aws-messaging</td>
+                    </tr>
+                    <tr>
+                        <td><code>WorkOrder.java</code></td>
+                        <td>Remover metodos de estoque (viram eventos)</td>
+                    </tr>
+                    <tr>
+                        <td><code>WorkOrderStatus.java</code></td>
+                        <td>Adicionar novos status</td>
+                    </tr>
+                    <tr>
+                        <td><code>CreateWorkOrderUseCaseImpl.java</code></td>
+                        <td>Trocar reserva sincrona por publish SQS</td>
+                    </tr>
+                    <tr>
+                        <td><code>ApproveWorkOrderUseCaseImpl.java</code></td>
+                        <td>Trocar confirmacao por publish SQS</td>
+                    </tr>
+                    <tr>
+                        <td><code>RefuseWorkOrderUseCaseImpl.java</code></td>
+                        <td>Trocar restauracao por publish SQS</td>
+                    </tr>
+                    <tr>
+                        <td><strong>NOVO</strong> <code>StockEventProducer.java</code></td>
+                        <td>Producer de mensagens para Parts</td>
+                    </tr>
+                    <tr>
+                        <td><strong>NOVO</strong> <code>StockEventConsumer.java</code></td>
+                        <td>Consumer de respostas de Parts</td>
+                    </tr>
+                    <tr>
+                        <td><strong>NOVO</strong> <code>application.yml</code></td>
+                        <td>Configuracao das filas SQS</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <hr>
+
+        <!-- 1. ESTADO ATUAL DO MONOLITO -->
+        <section id="estado-atual">
+            <h2>1. Estado Atual do Monolito</h2>
+
+            <h3>Arquitetura</h3>
+            <ul>
+                <li><strong>Spring Boot 3.5.5</strong> com Clean Architecture (4 modulos: core, usecase, application, infrastructure)</li>
+                <li><strong>PostgreSQL 16</strong> com Liquibase para migrations</li>
+                <li><strong>Kubernetes</strong> no AWS EKS</li>
+                <li><strong>Datadog</strong> para observabilidade</li>
+            </ul>
+
+            <h3>Modulo de OS - O que ele faz</h3>
+            <ul>
+                <li>Gerencia ordens de servico de uma oficina mecanica</li>
+                <li>11 endpoints REST (<code>/v1/work-orders/*</code>)</li>
+                <li>Fluxo de status: RECEIVED → IN_DIAGNOSIS → AWAITING_APPROVAL → IN_PROGRESS → COMPLETED → DELIVERED</li>
+                <li>4 tabelas: <code>work_orders</code>, <code>work_orders_parts</code>, <code>work_orders_services</code>, <code>work_order_history</code></li>
+            </ul>
+
+            <h3>Dependencias de OS (OS depende destes modulos)</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Modulo</th>
+                        <th>Tipo de Dependencia</th>
+                        <th>Criticidade</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Customer</strong></td>
+                        <td>FK + Autorizacao (documentNumber)</td>
+                        <td><span class="badge badge-warning">MEDIA</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Vehicle</strong></td>
+                        <td>FK</td>
+                        <td><span class="badge badge-success">BAIXA</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>User</strong></td>
+                        <td>FK (createdBy, assignedMechanic)</td>
+                        <td><span class="badge badge-success">BAIXA</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Part</strong></td>
+                        <td>FK + <strong>Manipulacao direta de estoque</strong></td>
+                        <td><span class="badge badge-danger">CRITICA</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Service</strong></td>
+                        <td>FK</td>
+                        <td><span class="badge badge-success">BAIXA</span></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Dependencias Reversas</h3>
+            <p><strong>ZERO</strong> - Nenhum modulo importa ou depende de WorkOrder. Isso e excelente para extracao.</p>
+        </section>
+
+        <!-- 2. ANALISE DE PROCESSAMENTO ASSINCRONO POR ENDPOINT -->
+        <section id="analise-endpoints">
+            <h2>2. Analise de Processamento Assincrono por Endpoint</h2>
+
+            <h3>Visao Geral dos 11 Endpoints</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Endpoint</th>
+                        <th>Metodo</th>
+                        <th>Envolve Estoque?</th>
+                        <th>Pode ser Async?</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>1</td><td><code>/create</code></td><td>POST</td><td>SIM (reserva)</td><td><strong>PARCIAL</strong></td></tr>
+                    <tr><td>2</td><td><code>/{id}</code></td><td>GET</td><td>NAO</td><td>NAO (leitura)</td></tr>
+                    <tr><td>3</td><td><code>/list</code></td><td>GET</td><td>NAO</td><td>NAO (leitura)</td></tr>
+                    <tr><td>4</td><td><code>/{id}/assign-mechanic</code></td><td>PATCH</td><td>NAO</td><td><strong>SIM</strong></td></tr>
+                    <tr><td>5</td><td><code>/{id}/status</code></td><td>PATCH</td><td>NAO</td><td><strong>SIM</strong></td></tr>
+                    <tr><td>6</td><td><code>/{id}/status</code></td><td>GET</td><td>NAO</td><td>NAO (leitura)</td></tr>
+                    <tr><td>7</td><td><code>/{id}/approve</code></td><td>PATCH</td><td>SIM (confirma)</td><td><strong>PARCIAL</strong></td></tr>
+                    <tr><td>8</td><td><code>/{id}/refuse</code></td><td>PATCH</td><td>SIM (restaura)</td><td><strong>PARCIAL</strong></td></tr>
+                    <tr><td>9</td><td><code>/{id}/update-items</code></td><td>PATCH</td><td>SIM (ajusta)</td><td><strong>PARCIAL</strong></td></tr>
+                    <tr><td>10</td><td><code>/history/by-cpf/{cpf}</code></td><td>GET</td><td>NAO</td><td>NAO (leitura)</td></tr>
+                    <tr><td>11</td><td><code>/calculate-average-time</code></td><td>GET</td><td>NAO</td><td>NAO (leitura)</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Detalhamento por Endpoint</h3>
+
+            <h4>1. POST <code>/create</code> - Criar OS (PARCIAL ASYNC)</h4>
+            <p><strong>Fluxo Atual:</strong></p>
+            <div class="code-block">Request → Valida Customer/Vehicle/User → Busca Parts/Services → Reserva Estoque → Salva OS → Response</div>
+            <p><strong>Problema:</strong> Cliente precisa saber se a OS foi criada (ID) e se ha estoque disponivel.</p>
+            <p><strong>Proposta Assincrona:</strong></p>
+            <div class="diagram">┌─────────────────────────────────────────────────────────────────────────────┐
+│ SINCRONO (resposta imediata)                                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ 1. Recebe request                                                           │
+│ 2. Valida dados basicos (formato, campos obrigatorios)                      │
+│ 3. Cria OS com status = PENDING_STOCK                                       │
+│ 4. Publica mensagem na fila SQS: "StockReservationRequested"                │
+│ 5. Retorna 202 Accepted + ID da OS                                          │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ ASSINCRONO (background)                                                     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Part Service (consumidor SQS):                                              │
+│ 1. Consome "StockReservationRequested"                                      │
+│ 2. Verifica disponibilidade de estoque                                      │
+│ 3. Reserva estoque (ou falha)                                               │
+│ 4. Publica resposta: "StockReserved" ou "StockReservationFailed"            │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ OS Service (consumidor SQS):                                                │
+│ 1. Consome "StockReserved" → Atualiza OS para RECEIVED                      │
+│    OU                                                                       │
+│ 2. Consome "StockReservationFailed" → Atualiza OS para FAILED               │
+└─────────────────────────────────────────────────────────────────────────────┘</div>
+
+            <p><strong>Filas SQS necessarias:</strong></p>
+            <ul>
+                <li><code>os-stock-reservation-request</code> (OS → Part)</li>
+                <li><code>os-stock-reservation-response</code> (Part → OS)</li>
+            </ul>
+
+            <p><strong>Response:</strong> <code>202 Accepted</code> com body:</p>
+            <div class="code-block json">{
+  "id": "uuid",
+  "status": "PENDING_STOCK",
+  "message": "Ordem de servico criada. Aguardando confirmacao de estoque."
+}</div>
+
+            <h4>4. PATCH <code>/{id}/assign-mechanic</code> - Atribuir Mecanico (FULL ASYNC)</h4>
+            <p><strong>Fluxo Atual:</strong> Valida User (mecanico) → Atualiza OS → Response</p>
+            <p><strong>Proposta:</strong> Pode ser 100% assincrono. Nao depende de estoque.</p>
+            <div class="diagram">┌─────────────────────────────────────────────────────────────────────────────┐
+│ SINCRONO                                                                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ 1. Valida se OS existe (leitura local)                                      │
+│ 2. Publica "MechanicAssignmentRequested" na fila SQS                        │
+│ 3. Retorna 202 Accepted                                                     │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ ASSINCRONO (worker do proprio OS Service)                                   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ 1. Valida mecanico via HTTP (User Service/Monolito)                         │
+│ 2. Atualiza OS com mecanico                                                 │
+│ 3. Muda status para IN_DIAGNOSIS                                            │
+│ 4. Salva historico                                                          │
+└─────────────────────────────────────────────────────────────────────────────┘</div>
+            <p><strong>Fila:</strong> <code>os-mechanic-assignment</code></p>
+
+            <h4>5. PATCH <code>/{id}/status</code> - Atualizar Status (FULL ASYNC)</h4>
+            <p><strong>Proposta:</strong> 100% assincrono. Nao envolve estoque.</p>
+            <div class="code-block">Request → Valida OS existe → Publica "StatusUpdateRequested" → 202 Accepted
+
+Worker: Consome → Valida transicao de status → Atualiza → Salva historico</div>
+            <p><strong>Fila:</strong> <code>os-status-update</code></p>
+
+            <h4>7. PATCH <code>/{id}/approve</code> - Aprovar OS (PARCIAL ASYNC)</h4>
+            <p><strong>Fluxo Atual:</strong> Valida documentNumber → Confirma estoque (approveStock) → Atualiza status</p>
+            <p><strong>Problema Critico:</strong> Estoque precisa ser confirmado no Part Service.</p>
+            <p><strong>Proposta:</strong></p>
+            <div class="diagram">┌─────────────────────────────────────────────────────────────────────────────┐
+│ SINCRONO                                                                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ 1. Valida documentNumber (pode cachear ou desnormalizar)                    │
+│ 2. Valida status == AWAITING_APPROVAL                                       │
+│ 3. Atualiza OS para status = APPROVING (estado intermediario)               │
+│ 4. Publica "StockConsumptionRequested" no SQS                               │
+│ 5. Retorna 202 Accepted                                                     │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ Part Service (consumidor):                                                  │
+│ 1. Consome "StockConsumptionRequested"                                      │
+│ 2. Move estoque de "reservado" para "consumido"                             │
+│ 3. Publica "StockConsumed"                                                  │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ OS Service (consumidor):                                                    │
+│ 1. Consome "StockConsumed"                                                  │
+│ 2. Atualiza OS para IN_PROGRESS                                             │
+│ 3. Salva approvedAt                                                         │
+│ 4. Salva historico                                                          │
+└─────────────────────────────────────────────────────────────────────────────┘</div>
+
+            <p><strong>Filas:</strong></p>
+            <ul>
+                <li><code>os-stock-consumption-request</code> (OS → Part)</li>
+                <li><code>os-stock-consumption-response</code> (Part → OS)</li>
+            </ul>
+
+            <h4>8. PATCH <code>/{id}/refuse</code> - Recusar OS (PARCIAL ASYNC)</h4>
+            <p><strong>Similar ao approve, mas restaura estoque:</strong></p>
+            <div class="code-block">Sincrono: Valida → Atualiza para REFUSING → Publica "StockRestorationRequested" → 202
+
+Part Service: Consome → Restaura estoque → Publica "StockRestored"
+
+OS Service: Consome → Atualiza para COMPLETED (recusado) → Salva historico</div>
+
+            <p><strong>Filas:</strong></p>
+            <ul>
+                <li><code>os-stock-restoration-request</code></li>
+                <li><code>os-stock-restoration-response</code></li>
+            </ul>
+
+            <h4>9. PATCH <code>/{id}/update-items</code> - Adicionar Itens (PARCIAL ASYNC)</h4>
+            <p><strong>Mais complexo:</strong> Precisa restaurar estoque antigo e reservar novo.</p>
+            <div class="code-block">Sincrono: Valida → Publica "StockAdjustmentRequested" (lista de itens antigos e novos) → 202
+
+Part Service:
+  1. Restaura estoque dos itens removidos
+  2. Reserva estoque dos novos itens
+  3. Publica "StockAdjusted" ou "StockAdjustmentFailed"
+
+OS Service: Consome → Atualiza OS com novos itens → Recalcula total</div>
+
+            <p><strong>Filas:</strong></p>
+            <ul>
+                <li><code>os-stock-adjustment-request</code></li>
+                <li><code>os-stock-adjustment-response</code></li>
+            </ul>
+
+            <h3>Endpoints que permanecem sincronos (leitura)</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Endpoint</th>
+                        <th>Motivo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>GET <code>/{id}</code></td><td>Leitura simples, precisa resposta imediata</td></tr>
+                    <tr><td>GET <code>/list</code></td><td>Leitura simples</td></tr>
+                    <tr><td>GET <code>/{id}/status</code></td><td>Leitura simples</td></tr>
+                    <tr><td>GET <code>/history/by-cpf/{cpf}</code></td><td>Leitura simples</td></tr>
+                    <tr><td>GET <code>/calculate-average-time</code></td><td>Leitura/calculo</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Arquitetura de Filas SQS</h3>
+            <div class="diagram">┌─────────────────────────────────────────────────────────────────────────────┐
+│                              FILAS SQS                                      │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  OS Service → Part Service (Monolito):                                      │
+│  ├── os-stock-reservation-request                                           │
+│  ├── os-stock-consumption-request                                           │
+│  ├── os-stock-restoration-request                                           │
+│  └── os-stock-adjustment-request                                            │
+│                                                                             │
+│  Part Service → OS Service:                                                 │
+│  ├── os-stock-reservation-response                                          │
+│  ├── os-stock-consumption-response                                          │
+│  ├── os-stock-restoration-response                                          │
+│  └── os-stock-adjustment-response                                           │
+│                                                                             │
+│  Internas do OS Service:                                                    │
+│  ├── os-mechanic-assignment                                                 │
+│  └── os-status-update                                                       │
+│                                                                             │
+│  Dead Letter Queues (DLQ):                                                  │
+│  ├── os-stock-dlq (falhas apos retries)                                     │
+│  └── os-internal-dlq                                                        │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘</div>
+
+            <h3>Novos Status para Suportar Async</h3>
+            <div class="code-block java">public enum WorkOrderStatus {
+    // Novos status intermediarios
+    PENDING_STOCK("Aguardando estoque"),      // Criacao em andamento
+    STOCK_FAILED("Falha no estoque"),         // Sem estoque disponivel
+    APPROVING("Aprovando"),                   // Aprovacao em andamento
+    REFUSING("Recusando"),                    // Recusa em andamento
+
+    // Status existentes
+    RECEIVED("Recebido"),
+    IN_DIAGNOSIS("Em diagnostico"),
+    AWAITING_APPROVAL("Aguardando aprovacao"),
+    REFUSED("Recusado"),
+    IN_PROGRESS("Em andamento"),
+    COMPLETED("Finalizado"),
+    DELIVERED("Entregue")
+}</div>
+
+            <h3>Mecanismo de Polling/Webhook para o Cliente</h3>
+            <p>Como o cliente sabera que a operacao async terminou?</p>
+
+            <p><strong>Opcao A: Polling</strong></p>
+            <div class="code-block">Cliente faz GET /{id} periodicamente ate status mudar de PENDING_STOCK para RECEIVED</div>
+
+            <p><strong>Opcao B: Webhook (se cliente suportar)</strong></p>
+            <div class="code-block">Cliente envia URL de callback no header
+OS Service chama webhook quando status muda</div>
+
+            <p><strong>Opcao C: WebSocket</strong></p>
+            <div class="code-block">Cliente mantem conexao WebSocket
+OS Service notifica em tempo real</div>
+        </section>
+
+        <!-- 3. O MAIOR PROBLEMA: GESTAO DE ESTOQUE -->
+        <section id="maior-problema">
+            <h2>3. O Maior Problema: Gestao de Estoque</h2>
+
+            <p>O codigo em <code>WorkOrder.java</code> (linhas 193-232) manipula diretamente o estoque de pecas:</p>
+
+            <div class="code-block java">// Ao CRIAR OS (linha 198)
+part.getPart().getStock().subtract(part.getQuantity());
+
+// Ao APROVAR OS (linha 220)
+stock.subtractReservedStock(totalQuantity);
+
+// Ao RECUSAR OS (linha 230)
+part.getPart().getStock().restore(part.getQuantity());</div>
+
+            <p>E em <code>CreateWorkOrderUseCaseImpl.java</code> (linhas 85-86):</p>
+            <div class="code-block java">workOrder.reserveParts();
+partGateway.saveAll(parts);  // Salva estoque modificado</div>
+
+            <h3>Por que isso e um problema?</h3>
+            <ol>
+                <li><strong>Transacao Distribuida:</strong> Hoje tudo roda em uma unica transacao ACID. Ao separar, precisamos de saga ou 2PC.</li>
+                <li><strong>Consistencia:</strong> Se o servico de OS cair apos reservar estoque, o estoque fica inconsistente.</li>
+                <li><strong>Rollback Complexo:</strong> Compensacao manual e necessaria em caso de falha.</li>
+            </ol>
+        </section>
+
+        <!-- 4. PROBLEMAS E DESAFIOS PARA DISCUSSAO -->
+        <section id="problemas-discussao">
+            <h2>4. Problemas e Desafios para Discussao</h2>
+
+            <h3>Problema 1: Consistencia Eventual (CRITICO)</h3>
+            <p>Com processamento assincrono, o cliente recebe <code>202 Accepted</code> mas a operacao ainda nao terminou.</p>
+            <p><strong>Cenarios problematicos:</strong></p>
+            <ol>
+                <li>Cliente cria OS → recebe ID → tenta GET imediatamente → OS ainda esta PENDING_STOCK</li>
+                <li>Cliente aprova OS → recebe 202 → tenta ver status → ainda esta APPROVING</li>
+                <li>Duas requisicoes de approve chegam antes da primeira terminar → duplicacao?</li>
+            </ol>
+            <p><strong>Solucoes:</strong></p>
+            <ul>
+                <li><strong>Idempotencia:</strong> Usar idempotency key no header para evitar duplicacao</li>
+                <li><strong>Documentacao clara:</strong> Cliente deve entender que 202 ≠ operacao completa</li>
+                <li><strong>Timeout/retry:</strong> Implementar Dead Letter Queue + alerta para operacoes travadas</li>
+            </ul>
+
+            <h3>Problema 2: Tratamento de Falhas</h3>
+            <p><strong>E se o Part Service nao responder?</strong></p>
+            <div class="code-block">Cenario: OS publica "StockReservationRequested" mas Part Service esta fora</div>
+            <p><strong>Solucao com SQS:</strong></p>
+            <div class="code-block">1. Mensagem fica na fila (SQS retem por ate 14 dias)
+2. Part Service volta → processa mensagens pendentes
+3. Se passar de X minutos → move para DLQ
+4. Worker de compensacao processa DLQ:
+   - Atualiza OS para STOCK_FAILED
+   - Notifica administrador</div>
+
+            <h3>Problema 3: Ordenacao de Mensagens</h3>
+            <p><strong>E se mensagens chegarem fora de ordem?</strong></p>
+            <div class="code-block">Cenario:
+1. Cliente cria OS (StockReservationRequested)
+2. Cliente cancela OS antes do estoque ser reservado
+3. Part Service processa reserva DEPOIS do cancelamento</div>
+            <p><strong>Solucoes:</strong></p>
+            <ul>
+                <li><strong>SQS FIFO:</strong> Garante ordenacao por MessageGroupId (usar workOrderId)</li>
+                <li><strong>Versionamento:</strong> Cada mensagem tem version number, ignorar versoes antigas</li>
+                <li><strong>Timestamp:</strong> Ignorar mensagens mais antigas que ultimo processamento</li>
+            </ul>
+
+            <h3>Problema 4: Autorizacao do Cliente</h3>
+            <p>Ao aprovar/recusar OS, o sistema valida <code>customer.documentNumber</code>:</p>
+            <div class="code-block java">if (!Objects.equals(workOrder.getCustomer().getDocumentNumber().getValue(), documentNumber)) {
+    throw new ForbiddenException(...);
+}</div>
+            <p><strong>Solucao recomendada:</strong> Desnormalizar <code>documentNumber</code> na tabela <code>work_orders</code></p>
+            <ul>
+                <li>Captura no momento da criacao</li>
+                <li>Evita chamada HTTP no fluxo de aprovacao</li>
+                <li>Dado nao muda frequentemente</li>
+            </ul>
+
+            <h3>Problema 5: Foreign Keys no Banco</h3>
+            <p>Atualmente existem FKs para <code>customers</code>, <code>vehicles</code>, <code>users</code>, <code>parts</code>, <code>services</code>.</p>
+            <p><strong>Opcoes:</strong></p>
+            <ul>
+                <li>Remover FKs e validar na aplicacao</li>
+                <li>Manter banco compartilhado inicialmente (schema separado)</li>
+                <li>Desnormalizar dados essenciais (snapshot de precos, nomes)</li>
+            </ul>
+
+            <h3>Problema 6: Estrategia de Migracao</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Estrategia</th>
+                        <th>Descricao</th>
+                        <th>Risco</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Big Bang</strong></td>
+                        <td>Migrar tudo de uma vez</td>
+                        <td><span class="badge badge-danger">ALTO</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Strangler Fig</strong></td>
+                        <td>Migrar gradualmente, endpoint por endpoint</td>
+                        <td><span class="badge badge-warning">MEDIO</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Branch by Abstraction</strong></td>
+                        <td>Criar abstracao, depois migrar</td>
+                        <td><span class="badge badge-success">BAIXO</span></td>
+                    </tr>
+                </tbody>
+            </table>
+            <p><strong>Recomendacao:</strong> Strangler Fig, migrando endpoints na ordem:</p>
+            <ol>
+                <li>Endpoints GET (sem estoque) - validar infraestrutura</li>
+                <li><code>assign-mechanic</code> e <code>status</code> - testar async interno</li>
+                <li><code>create</code> - testar saga de estoque</li>
+                <li><code>approve/refuse</code> - completar saga</li>
+                <li><code>update-items</code> - mais complexo, por ultimo</li>
+            </ol>
+
+            <h3>Problema 7: Comunicacao com Part Service no Monolito</h3>
+            <p>O Part Service permanece no monolito. Como ele vai consumir/produzir mensagens SQS?</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Opcao</th>
+                        <th>Descricao</th>
+                        <th>Esforco</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>A. Adicionar SQS ao monolito</strong></td>
+                        <td>Monolito vira producer/consumer de SQS</td>
+                        <td><span class="badge badge-warning">MEDIO</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>B. Sidecar/Adapter</strong></td>
+                        <td>Container separado que faz bridge HTTP ↔ SQS</td>
+                        <td><span class="badge badge-danger">ALTO</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>C. API Gateway + Lambda</strong></td>
+                        <td>Lambda consome SQS e chama API REST do monolito</td>
+                        <td><span class="badge badge-warning">MEDIO</span></td>
+                    </tr>
+                </tbody>
+            </table>
+            <p><strong>Recomendacao:</strong> Opcao A - adicionar dependencia SQS ao monolito e o caminho mais simples</p>
+        </section>
+
+        <!-- 5. FASES PROPOSTAS PARA IMPLEMENTACAO -->
+        <section id="fases">
+            <h2>5. Fases Propostas para Implementacao</h2>
+
+            <h3>Fase 0: Preparacao</h3>
+            <ul class="checklist">
+                <li>Definir contratos de API (OpenAPI) com novos status (PENDING_STOCK, etc.)</li>
+                <li>Criar filas SQS na AWS (10 filas + 2 DLQs)</li>
+                <li>Configurar infraestrutura (novo repo, IAM roles, etc.)</li>
+                <li>Adicionar dependencia AWS SQS ao monolito (para Part Service consumir)</li>
+                <li>Criar testes de contrato</li>
+            </ul>
+
+            <h3>Fase 1: Desacoplamento do Banco</h3>
+            <ul class="checklist">
+                <li>Criar schema separado <code>workorder_service</code></li>
+                <li>Remover FKs, validar na aplicacao</li>
+                <li>Adicionar colunas desnormalizadas:
+                    <ul>
+                        <li><code>customer_document_number</code> (para autorizacao)</li>
+                        <li><code>customer_name</code>, <code>vehicle_plate</code> (para display)</li>
+                    </ul>
+                </li>
+                <li>Adicionar tabela <code>outbox_events</code> para garantir entrega</li>
+            </ul>
+
+            <h3>Fase 2: Anti-Corruption Layer (ACL) + SQS</h3>
+            <ul class="checklist">
+                <li>Criar clients HTTP para Customer, Vehicle, User (validacao sincrona)</li>
+                <li>Implementar producers SQS para mensagens de estoque</li>
+                <li>Implementar consumers SQS para respostas de estoque</li>
+                <li>Implementar circuit breakers (Resilience4j)</li>
+                <li>Adicionar cache (ElastiCache/Redis)</li>
+            </ul>
+
+            <h3>Fase 3: Extracao do Servico</h3>
+            <ul class="checklist">
+                <li>Novo repositorio <code>workorder-service</code></li>
+                <li>Migrar endpoints GET primeiro (sem async)</li>
+                <li>Implementar saga de estoque com SQS</li>
+                <li>Configurar workers para processar filas</li>
+                <li>Implementar DLQ handlers</li>
+            </ul>
+
+            <h3>Fase 4: Migracao de Trafego</h3>
+            <ul class="checklist">
+                <li>Feature flags para roteamento (AWS AppConfig ou LaunchDarkly)</li>
+                <li>Canary deployment (5% → 25% → 50% → 100%)</li>
+                <li>Monitoramento intensivo (CloudWatch + Datadog)</li>
+                <li>Runbook de rollback</li>
+            </ul>
+
+            <h3>Fase 5: Limpeza</h3>
+            <ul class="checklist">
+                <li>Remover codigo de OS do monolito</li>
+                <li>Migrar para banco dedicado (RDS separado)</li>
+                <li>Otimizar filas (ajustar visibility timeout, batch size)</li>
+                <li>Documentacao final</li>
+            </ul>
+        </section>
+
+        <!-- 6. ARQUIVOS CRITICOS QUE SERAO AFETADOS -->
+        <section id="arquivos-criticos">
+            <h2>6. Arquivos Criticos que Serao Afetados</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Arquivo</th>
+                        <th>Mudanca Necessaria</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>core/.../workorder/WorkOrder.java</code></td>
+                        <td>Remover metodos <code>reserveParts</code>, <code>approveStock</code>, <code>restoreStock</code>. Viram eventos SQS.</td>
+                    </tr>
+                    <tr>
+                        <td><code>core/.../workorder/WorkOrderStatus.java</code></td>
+                        <td>Adicionar status: <code>PENDING_STOCK</code>, <code>STOCK_FAILED</code>, <code>APPROVING</code>, <code>REFUSING</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>application/.../CreateWorkOrderUseCaseImpl.java</code></td>
+                        <td>Trocar <code>partGateway.saveAll()</code> por publish SQS. Retornar status PENDING_STOCK.</td>
+                    </tr>
+                    <tr>
+                        <td><code>application/.../ApproveWorkOrderUseCaseImpl.java</code></td>
+                        <td>Trocar logica de estoque por publish SQS.</td>
+                    </tr>
+                    <tr>
+                        <td><code>application/.../RefuseWorkOrderUseCaseImpl.java</code></td>
+                        <td>Trocar logica de restauracao por publish SQS.</td>
+                    </tr>
+                    <tr>
+                        <td><code>infrastructure/.../db/changelog/</code></td>
+                        <td>Adicionar colunas desnormalizadas + tabela outbox_events</td>
+                    </tr>
+                    <tr>
+                        <td><strong>MONOLITO (Part)</strong></td>
+                        <td>Adicionar consumers SQS para processar requisicoes de estoque</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- 7. RISCOS E MITIGACOES -->
+        <section id="riscos">
+            <h2>7. Riscos e Mitigacoes</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Risco</th>
+                        <th>Severidade</th>
+                        <th>Probabilidade</th>
+                        <th>Mitigacao</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Mensagens perdidas no SQS</td>
+                        <td><span class="badge badge-danger">CRITICA</span></td>
+                        <td><span class="badge badge-success">BAIXA</span></td>
+                        <td>Outbox pattern + DLQ + alarmes CloudWatch</td>
+                    </tr>
+                    <tr>
+                        <td>Estoque inconsistente</td>
+                        <td><span class="badge badge-danger">CRITICA</span></td>
+                        <td><span class="badge badge-warning">MEDIA</span></td>
+                        <td>Idempotency key + versionamento + reconciliacao periodica</td>
+                    </tr>
+                    <tr>
+                        <td>Timeout na saga</td>
+                        <td><span class="badge badge-warning">ALTA</span></td>
+                        <td><span class="badge badge-warning">MEDIA</span></td>
+                        <td>Visibility timeout adequado + compensacao automatica</td>
+                    </tr>
+                    <tr>
+                        <td>Mensagens fora de ordem</td>
+                        <td><span class="badge badge-warning">ALTA</span></td>
+                        <td><span class="badge badge-warning">MEDIA</span></td>
+                        <td>SQS FIFO com MessageGroupId = workOrderId</td>
+                    </tr>
+                    <tr>
+                        <td>Part Service fora do ar</td>
+                        <td><span class="badge badge-warning">ALTA</span></td>
+                        <td><span class="badge badge-success">BAIXA</span></td>
+                        <td>Mensagens acumulam no SQS, processam quando voltar</td>
+                    </tr>
+                    <tr>
+                        <td>Cliente nao sabe status</td>
+                        <td><span class="badge badge-warning">MEDIA</span></td>
+                        <td><span class="badge badge-danger">ALTA</span></td>
+                        <td>Documentar bem o modelo 202 + polling endpoint</td>
+                    </tr>
+                    <tr>
+                        <td>Rollback durante migracao</td>
+                        <td><span class="badge badge-warning">ALTA</span></td>
+                        <td><span class="badge badge-success">BAIXA</span></td>
+                        <td>Feature flags + dual-write temporario</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- 8. QUESTOES PENDENTES PARA DISCUSSAO -->
+        <section id="questoes-pendentes">
+            <h2>8. Questoes Pendentes para Discussao</h2>
+            <ol>
+                <li><strong>SQS Standard vs FIFO?</strong>
+                    <ul>
+                        <li>FIFO garante ordem mas tem limite de 300 msg/s por grupo</li>
+                        <li>Standard e mais rapido mas pode entregar fora de ordem</li>
+                    </ul>
+                </li>
+                <li><strong>Como o cliente sabe que a OS foi processada?</strong>
+                    <ul>
+                        <li>Polling (GET /{id} ate status mudar)?</li>
+                        <li>Webhook (cliente envia URL de callback)?</li>
+                        <li>WebSocket (conexao persistente)?</li>
+                    </ul>
+                </li>
+                <li><strong>Quanto tempo esperar antes de mover para DLQ?</strong>
+                    <ul>
+                        <li>Apos quantas tentativas?</li>
+                        <li>Qual o visibility timeout ideal?</li>
+                    </ul>
+                </li>
+                <li><strong>Como fazer reconciliacao de estoque?</strong>
+                    <ul>
+                        <li>Job periodico que compara OS vs estoque?</li>
+                        <li>Com que frequencia?</li>
+                    </ul>
+                </li>
+                <li><strong>Monolito precisa de refatoracao para consumir SQS?</strong>
+                    <ul>
+                        <li>Adicionar Spring Cloud AWS?</li>
+                        <li>Criar novo modulo de workers?</li>
+                    </ul>
+                </li>
+            </ol>
+        </section>
+
+        <!-- 9. PROXIMOS PASSOS RECOMENDADOS -->
+        <section id="proximos-passos">
+            <h2>9. Proximos Passos Recomendados</h2>
+            <ol>
+                <li><strong>Decidir questoes pendentes</strong> (secao 8)</li>
+                <li><strong>Criar POC de SQS</strong> - Producer no OS, Consumer no monolito</li>
+                <li><strong>Prototipar saga do CREATE</strong> em ambiente de dev</li>
+                <li><strong>Definir contratos de mensagens</strong> (JSON schema para cada tipo de mensagem)</li>
+                <li><strong>Configurar infraestrutura AWS</strong> (filas, IAM, alarmes)</li>
+                <li><strong>Implementar endpoint GET primeiro</strong> (validar deploy do microservico)</li>
+                <li><strong>Implementar assign-mechanic</strong> (primeiro endpoint async sem estoque)</li>
+                <li><strong>Implementar CREATE com saga</strong> (primeiro endpoint com estoque)</li>
+                <li><strong>Testes de carga e chaos</strong> engineering</li>
+                <li><strong>Migracao gradual de trafego</strong></li>
+            </ol>
+        </section>
+
+        <!-- 10. ESTRUTURA DE MENSAGENS SQS (PROPOSTA) -->
+        <section id="estrutura-mensagens">
+            <h2>10. Estrutura de Mensagens SQS (Proposta)</h2>
+
+            <h3>StockReservationRequested</h3>
+            <div class="code-block json">{
+  "messageId": "uuid",
+  "workOrderId": "uuid",
+  "idempotencyKey": "uuid",
+  "timestamp": "2026-01-29T10:00:00Z",
+  "parts": [
+    {
+      "partId": "uuid",
+      "quantity": 2
+    }
+  ]
+}</div>
+
+            <h3>StockReserved</h3>
+            <div class="code-block json">{
+  "messageId": "uuid",
+  "workOrderId": "uuid",
+  "idempotencyKey": "uuid",
+  "timestamp": "2026-01-29T10:00:05Z",
+  "reservationId": "uuid",
+  "success": true
+}</div>
+
+            <h3>StockReservationFailed</h3>
+            <div class="code-block json">{
+  "messageId": "uuid",
+  "workOrderId": "uuid",
+  "idempotencyKey": "uuid",
+  "timestamp": "2026-01-29T10:00:05Z",
+  "success": false,
+  "reason": "INSUFFICIENT_STOCK",
+  "failedParts": [
+    {
+      "partId": "uuid",
+      "requested": 5,
+      "available": 2
+    }
+  ]
+}</div>
+        </section>
+
+    </div>
+
+    <footer>
+        <p>Documento gerado em 29/01/2026 | Projeto ChallengeOne | Plano Completo de Extracao do Microservico de OS</p>
+    </footer>
+</body>
+</html>

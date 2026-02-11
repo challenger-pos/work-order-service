@@ -49,6 +49,14 @@ public class UpdateStatusWorkOrderUseCaseImpl implements UpdateStatusWorkOrderUs
 
         if (workOrder.getStatus() == statusEnum) throw new BadRequestException(ErrorCodeEnum.WORK0005.getMessage(), ErrorCodeEnum.WORK0005.getCode());
 
+        // TODO [MS Estoque + MS Pagamento] Ao mudar para COMPLETED:
+        //   1. Publicar CMD_EFETIVAR_BAIXA {workOrderId, itens} na fila q-estoque-cmd (baixa definitiva, converte reserva em consumo)
+        //   2. Mudar status para AWAITING_PAYMENT (iniciar fluxo de pagamento)
+        //   3. Ouvir q-pgto-events:
+        //      - EVT_PAGAMENTO_CONFIRMADO → status DELIVERED
+        //      - EVT_PAGAMENTO_FALHOU → status REFUSED_PAYMENT + publish CMD_REPOR_ESTOQUE na q-estoque-cmd
+        // TODO [MS Pagamento] DELIVERED so pode vir do consumer de pagamento, nao diretamente via endpoint.
+        //   Considerar bloquear transicao direta para DELIVERED neste metodo.
         if (statusEnum == WorkOrderStatus.DELIVERED || statusEnum == WorkOrderStatus.COMPLETED) {
             workOrder.setFinishedAt(LocalDateTime.now());
         }
