@@ -8,6 +8,7 @@ import com.fiap.core.domain.service.Service;
 import com.fiap.core.domain.workorder.WorkOrder;
 import com.fiap.core.domain.workorder.WorkOrderPart;
 import com.fiap.core.domain.workorder.WorkOrderService;
+import com.fiap.core.domain.workorder.WorkOrderStatus;
 import com.fiap.core.exception.BadRequestException;
 import com.fiap.core.exception.BusinessRuleException;
 import com.fiap.core.exception.NotFoundException;
@@ -38,10 +39,6 @@ public class AddItemsWorkOrderUseCaseImpl implements AddItemsWorkOrderUseCase {
         WorkOrder workOrder = workOrderGateway.findById(workOrderId)
                 .orElseThrow(() -> new NotFoundException(ErrorCodeEnum.WORK0001.getMessage(), ErrorCodeEnum.WORK0001.getCode()));
 
-        // TODO [MS Estoque] REMOVER workOrder.restoreStock() - substituir por publish CMD_CANCELAR_RESERVA
-        //   (cancela reserva anterior) + CMD_RESERVAR (nova reserva com itens atualizados) na fila q-estoque-cmd
-        workOrder.restoreStock();
-
         List<UUID> partIds = increaseWorkOrder.getWorkOrderParts().stream()
                 .map(WorkOrderPart::getPartId)
                 .toList();
@@ -66,12 +63,10 @@ public class AddItemsWorkOrderUseCaseImpl implements AddItemsWorkOrderUseCase {
         workOrder.getWorkOrderParts().addAll(workOrderParts);
 
         workOrder.recalculateTotal();
-        // TODO [MS Estoque] REMOVER workOrder.reserveParts() - substituido por CMD_RESERVAR na fila q-estoque-cmd
-        workOrder.reserveParts();
-        // TODO [MS Estoque] REMOVER partGateway.saveAll(parts) - stock gerenciado pelo MS Estoque
-        partGateway.saveAll(parts);
-        // TODO [MS Estoque] Mudar status para AWAITING_STOCK (mesma interface/consumer do create).
-        //   Quando EVT_RESERVADO chegar via q-os-events, voltar para IN_DIAGNOSIS.
+
+        //TODO Chamar fila para validar Estoque
+        workOrder.setStatus(WorkOrderStatus.APPROVAL_STOCK);
+
         return workOrderGateway.save(workOrder);
     }
 

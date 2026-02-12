@@ -34,14 +34,4 @@ public class PartConfig {
     public UpdatePartUseCase updatePartUseCase(PartGateway partGateway, FindPartByIdUseCase findPartByIdUseCase) {
         return new UpdatePartUseCaseImpl(partGateway, findPartByIdUseCase);
     }
-
-    @Bean
-    public SubtractPartsFromStockUseCase subtractPartsFromStockUseCase(FindPartByIdUseCase findPartByIdUseCase, UpdatePartUseCase updatePartUseCase) {
-        return new SubtractPartsFromStockUseCaseImpl(findPartByIdUseCase, updatePartUseCase);
-    }
-
-    @Bean
-    public ReturnPartsToStockUseCase returnPartsToStockUseCase(FindPartByIdUseCase findPartByIdUseCase, UpdatePartUseCase updatePartUseCase) {
-        return new ReturnPartsToStockUseCaseImpl(findPartByIdUseCase, updatePartUseCase);
-    }
 }

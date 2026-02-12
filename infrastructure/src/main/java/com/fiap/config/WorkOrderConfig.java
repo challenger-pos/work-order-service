@@ -6,6 +6,7 @@ import com.fiap.application.gateway.service.ServiceGateway;
 import com.fiap.application.gateway.user.UserGateway;
 import com.fiap.application.gateway.vehicle.VehicleGateway;
 import com.fiap.application.gateway.workorder.WorkOrderGateway;
+import com.fiap.application.gateway.workorder.WorkOrderQueueGateway;
 import com.fiap.application.usecaseimpl.workorder.*;
 import com.fiap.usecase.workorder.*;
 import org.springframework.context.annotation.Bean;
@@ -30,8 +31,8 @@ public class WorkOrderConfig {
     }
 
     @Bean
-    public UpdateStatusWorkOrderUseCase updateStatusWorkOrderUseCase(WorkOrderGateway workOrderGateway, ServiceGateway serviceGateway) {
-        return new UpdateStatusWorkOrderUseCaseImpl(workOrderGateway, serviceGateway);
+    public UpdateStatusWorkOrderUseCase updateStatusWorkOrderUseCase(WorkOrderGateway workOrderGateway, ServiceGateway serviceGateway, WorkOrderQueueGateway workOrderQueueGateway) { // Injeção da dependência
+        return new UpdateStatusWorkOrderUseCaseImpl(workOrderGateway, serviceGateway, workOrderQueueGateway);
     }
 
     @Bean
@@ -40,13 +41,13 @@ public class WorkOrderConfig {
     }
 
     @Bean
-    public ApproveWorkOrderUseCase approveWorkOrderUseCase(WorkOrderGateway workOrderGateway, PartGateway partGateway) {
-        return new ApproveWorkOrderUseCaseImpl(workOrderGateway, partGateway);
+    public ApproveWorkOrderUseCase approveWorkOrderUseCase(WorkOrderGateway workOrderGateway, WorkOrderQueueGateway workOrderQueueGateway, PartGateway partGateway) {
+        return new ApproveWorkOrderUseCaseImpl(workOrderGateway, workOrderQueueGateway, partGateway);
     }
 
     @Bean
-    public RefuseWorkOrderUseCase refuseWorkOrderUseCase(WorkOrderGateway workOrderGateway, PartGateway partGateway) {
-        return new RefuseWorkOrderUseCaseImpl(workOrderGateway, partGateway);
+    public RefuseWorkOrderUseCase refuseWorkOrderUseCase(WorkOrderGateway workOrderGateway, WorkOrderQueueGateway workOrderQueueGateway, PartGateway partGateway) {
+        return new RefuseWorkOrderUseCaseImpl(workOrderGateway, workOrderQueueGateway, partGateway);
     }
 
     @Bean

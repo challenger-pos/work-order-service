@@ -83,16 +83,9 @@ public class CreateWorkOrderUseCaseImpl implements CreateWorkOrderUseCase {
         workOrder.setWorkOrderServices(workOrderServices);
 
         workOrder.recalculateTotal();
-        // TODO [MS Estoque] REMOVER workOrder.reserveParts() - substituir por publish CMD_RESERVAR {workOrderId, itens[{partId, quantity}]} na fila q-estoque-cmd
-        workOrder.reserveParts();
-        // TODO [MS Estoque] REMOVER partGateway.saveAll(parts) - stock gerenciado pelo MS Estoque
-        partGateway.saveAll(parts);
         WorkOrder savedWorkOrder = workOrderGateway.save(workOrder);
 
-        // Salvar histórico com status RECEIVED
-        // TODO [MS Estoque] Mudar: salvar historico com status AWAITING_STOCK (nao RECEIVED).
-        //   Status RECEIVED so sera atribuido quando consumer receber EVT_RESERVADO via q-os-events.
-        WorkOrderHistory history = new WorkOrderHistory(savedWorkOrder.getId(), WorkOrderStatus.RECEIVED);
+        WorkOrderHistory history = new WorkOrderHistory(savedWorkOrder.getId(), WorkOrderStatus.APPROVAL_STOCK);
         history.setCreatedAt(savedWorkOrder.getCreatedAt());
         workOrderGateway.saveHistory(history);
 

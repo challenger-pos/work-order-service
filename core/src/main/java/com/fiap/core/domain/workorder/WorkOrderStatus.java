@@ -2,17 +2,15 @@ package com.fiap.core.domain.workorder;
 
 public enum WorkOrderStatus {
     RECEIVED("Recebido"),
-    // TODO [MS Estoque] Adicionar novos status:
-    //   AWAITING_STOCK("Aguardando confirmação de estoque") - OS aguarda resposta do MS Estoque via fila q-os-events
-    //   REJECTED_STOCK("Estoque indisponível") - OS finalizada quando EVT_FALHA_RESERVA recebido via q-os-events
+    APPROVAL_STOCK("Estoque aprovado"),
+    REFUSED_STOCK("Estoque rejeitado"),
     IN_DIAGNOSIS("Em diagnóstico"),
     AWAITING_APPROVAL("Aguardando aprovação"),
     REFUSED("Recusado"),
     IN_PROGRESS("Em andamento"),
     COMPLETED("Finalizado"),
-    // TODO [MS Pagamento] Adicionar novos status:
-    //   AWAITING_PAYMENT("Aguardando pagamento") - Apos COMPLETED, aguarda confirmacao de pagamento via q-pgto-events
-    //   REFUSED_PAYMENT("Pagamento recusado") - Quando EVT_PAGAMENTO_FALHOU recebido, publica CMD_REPOR_ESTOQUE na q-estoque-cmd
+    APPROVAL_PAYMENT("Pagamento aprovado"),
+    REFUSED_PAYMENT("Pagamento rejeitado"),
     DELIVERED("Entregue");
 
     private final String description;

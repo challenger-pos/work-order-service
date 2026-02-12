@@ -23,7 +23,6 @@ public class UpdatePartUseCaseImpl implements UpdatePartUseCase {
         existingPart.setName(partWithUpdates.getName());
         existingPart.setDescription(partWithUpdates.getDescription());
         existingPart.setPrice(partWithUpdates.getPrice());
-        existingPart.setStock(partWithUpdates.getStock());
 
         return partGateway.update(existingPart);
     }

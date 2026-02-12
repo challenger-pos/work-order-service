@@ -2,6 +2,7 @@ package com.fiap.application.usecaseimpl.workorder;
 
 import com.fiap.application.gateway.part.PartGateway;
 import com.fiap.application.gateway.workorder.WorkOrderGateway;
+import com.fiap.application.gateway.workorder.WorkOrderQueueGateway;
 import com.fiap.core.domain.part.Part;
 import com.fiap.core.domain.workorder.WorkOrder;
 import com.fiap.core.domain.workorder.WorkOrderHistory;
@@ -10,6 +11,7 @@ import com.fiap.core.domain.workorder.WorkOrderStatus;
 import com.fiap.core.exception.*;
 import com.fiap.core.exception.enums.ErrorCodeEnum;
 import com.fiap.usecase.workorder.RefuseWorkOrderUseCase;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -19,16 +21,13 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
+@RequiredArgsConstructor
 public class RefuseWorkOrderUseCaseImpl implements RefuseWorkOrderUseCase {
 
     private static final Logger logger = LoggerFactory.getLogger(RefuseWorkOrderUseCaseImpl.class);
     private final WorkOrderGateway workOrderGateway;
+    private final WorkOrderQueueGateway workOrderQueueGateway;
     private final PartGateway partGateway;
-
-    public RefuseWorkOrderUseCaseImpl(WorkOrderGateway workOrderGateway, PartGateway partGateway) {
-        this.workOrderGateway = workOrderGateway;
-        this.partGateway = partGateway;
-    }
 
     @Override
     public void execute(UUID id, String documentNumber) throws NotFoundException, BadRequestException, BusinessRuleException, UnauthorizedException, ForbiddenException {
@@ -62,18 +61,13 @@ public class RefuseWorkOrderUseCaseImpl implements RefuseWorkOrderUseCase {
             logger.info("Refusing work order: {} - Restoring stock for {} parts", id, workOrder.getWorkOrderParts().size());
 
             // TODO [MS Estoque] SUBSTITUIR workOrder.restoreStock() por publish CMD_CANCELAR_RESERVA {workOrderId} na fila q-estoque-cmd
-            workOrder.restoreStock();
-            // TODO [MS Estoque] ALTERAR status para REFUSED (status mais explicito, ao inves de COMPLETED)
-            workOrder.setStatus(WorkOrderStatus.COMPLETED);
+            workOrder.setStatus(WorkOrderStatus.REFUSED);
             workOrder.setFinishedAt(LocalDateTime.now());
 
-            // TODO [MS Estoque] REMOVER bloco abaixo (extrai parts + partGateway.saveAll) - stock gerenciado pelo MS Estoque
-            List<Part> parts = workOrder.getWorkOrderParts().stream()
-                    .map(WorkOrderPart::getPart)
-                    .toList();
-
-            partGateway.saveAll(parts);
             workOrderGateway.save(workOrder);
+
+            // TODO chamada para reverter o estoque
+//            workOrderQueueGateway.publishStockCancellation(workOrder);
 
             // Salvar histórico com status COMPLETED
             WorkOrderHistory history = new WorkOrderHistory(workOrder.getId(), WorkOrderStatus.COMPLETED);
