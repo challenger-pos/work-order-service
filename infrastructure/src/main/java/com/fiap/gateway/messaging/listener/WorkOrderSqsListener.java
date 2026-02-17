@@ -51,7 +51,7 @@ public class WorkOrderSqsListener {
             System.out.println("Evento Recebido: Pagamento com SUCESSO. Payload: " + message);
             UUID workOrderId = extractWorkOrderId(message);
 
-            updateStatusWorkOrderUseCase.execute(workOrderId, "PAID");
+            updateStatusWorkOrderUseCase.execute(workOrderId, WorkOrderStatus.APPROVAL_PAYMENT.name());
         } catch (Exception e) {
             System.err.println("Erro ao processar sucesso de pagamento: " + e.getMessage());
             throw new RuntimeException(e);
@@ -64,7 +64,7 @@ public class WorkOrderSqsListener {
             System.out.println("Evento Recebido: Pagamento FALHOU. Payload: " + message);
             UUID workOrderId = extractWorkOrderId(message);
 
-            updateStatusWorkOrderUseCase.execute(workOrderId, "CANCELED");
+            updateStatusWorkOrderUseCase.execute(workOrderId, WorkOrderStatus.REFUSED_PAYMENT.name());
         } catch (Exception e) {
             System.err.println("Erro ao processar falha de pagamento: " + e.getMessage());
             throw new RuntimeException(e);
