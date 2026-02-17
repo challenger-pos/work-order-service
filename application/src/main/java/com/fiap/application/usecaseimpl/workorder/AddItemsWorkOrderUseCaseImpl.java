@@ -61,7 +61,7 @@ public class AddItemsWorkOrderUseCaseImpl implements AddItemsWorkOrderUseCase {
 
         workOrder.recalculateTotal();
 
-        workOrder.setStatus(WorkOrderStatus.APPROVAL_STOCK);
+        workOrder.setStatus(WorkOrderStatus.AWAITING_STOCK_CONFIRMATION);
         workOrderQueueGateway.publishStockReservation(workOrder);
 
         return workOrderGateway.save(workOrder);

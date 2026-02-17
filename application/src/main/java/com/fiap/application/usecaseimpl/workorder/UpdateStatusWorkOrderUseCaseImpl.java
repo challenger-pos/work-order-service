@@ -48,13 +48,14 @@ public class UpdateStatusWorkOrderUseCaseImpl implements UpdateStatusWorkOrderUs
             throw new BadRequestException(ErrorCodeEnum.WORK0005.getMessage(), ErrorCodeEnum.WORK0005.getCode());
         }
 
-        if (newStatus == WorkOrderStatus.IN_PROGRESS) {
-            workOrderQueueGateway.publishStockDecrease(workOrder);
-        }
-
         if (newStatus == WorkOrderStatus.COMPLETED) {
             workOrder.setFinishedAt(LocalDateTime.now());
             workOrderQueueGateway.publishPaymentRequest(workOrder);
+        }
+
+        if (newStatus == WorkOrderStatus.AWAITING_STOCK_CONFIRMATION) {
+            workOrder.setFinishedAt(LocalDateTime.now());
+            workOrderQueueGateway.publishStockDecrease(workOrder);
         }
 
         if (newStatus == WorkOrderStatus.DELIVERED) {

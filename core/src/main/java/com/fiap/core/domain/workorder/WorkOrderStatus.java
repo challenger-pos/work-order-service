@@ -3,7 +3,7 @@ package com.fiap.core.domain.workorder;
 public enum WorkOrderStatus {
     RECEIVED("Recebido"),
     IN_DIAGNOSIS("Em diagnóstico"),
-    APPROVAL_STOCK("Estoque aprovado"),
+    AWAITING_STOCK_CONFIRMATION("Aguardando aprovação de estoque"),
     REFUSED_STOCK("Estoque rejeitado"),
     AWAITING_APPROVAL("Aguardando aprovação"),
     REFUSED("Recusado"),
