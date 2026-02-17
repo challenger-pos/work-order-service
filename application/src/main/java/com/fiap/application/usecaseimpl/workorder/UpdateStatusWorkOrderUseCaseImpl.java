@@ -22,7 +22,7 @@ public class UpdateStatusWorkOrderUseCaseImpl implements UpdateStatusWorkOrderUs
 
     private final WorkOrderGateway workOrderGateway;
     private final ServiceGateway serviceGateway;
-    private final WorkOrderQueueGateway workOrderQueueGateway; // Gateway de Filas
+    private final WorkOrderQueueGateway workOrderQueueGateway;
 
     @Override
     public WorkOrder execute(UUID id, String newStatusStr)
@@ -49,14 +49,12 @@ public class UpdateStatusWorkOrderUseCaseImpl implements UpdateStatusWorkOrderUs
         }
 
         if (newStatus == WorkOrderStatus.IN_PROGRESS) {
-            // TODO chama a fila pra diminuir o estoque
-//            workOrderQueueGateway.publishStockDecrease(workOrder);
+            workOrderQueueGateway.publishStockDecrease(workOrder);
         }
 
         if (newStatus == WorkOrderStatus.COMPLETED) {
             workOrder.setFinishedAt(LocalDateTime.now());
-            // TODO chama a fila para chamar a requisição de pagamento
-//            workOrderQueueGateway.publishPaymentRequest(workOrder);
+            workOrderQueueGateway.publishPaymentRequest(workOrder);
         }
 
         if (newStatus == WorkOrderStatus.DELIVERED) {

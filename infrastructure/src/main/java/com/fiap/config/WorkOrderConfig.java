@@ -31,7 +31,7 @@ public class WorkOrderConfig {
     }
 
     @Bean
-    public UpdateStatusWorkOrderUseCase updateStatusWorkOrderUseCase(WorkOrderGateway workOrderGateway, ServiceGateway serviceGateway, WorkOrderQueueGateway workOrderQueueGateway) { // Injeção da dependência
+    public UpdateStatusWorkOrderUseCase updateStatusWorkOrderUseCase(WorkOrderGateway workOrderGateway, ServiceGateway serviceGateway, WorkOrderQueueGateway workOrderQueueGateway) {
         return new UpdateStatusWorkOrderUseCaseImpl(workOrderGateway, serviceGateway, workOrderQueueGateway);
     }
 
@@ -51,8 +51,8 @@ public class WorkOrderConfig {
     }
 
     @Bean
-    public AddItemsWorkOrderUseCase addItemsWorkOrderUseCase(WorkOrderGateway workOrderGateway, PartGateway partGateway, ServiceGateway serviceGateway) {
-        return new AddItemsWorkOrderUseCaseImpl(workOrderGateway,partGateway,serviceGateway);
+    public AddItemsWorkOrderUseCase addItemsWorkOrderUseCase(WorkOrderGateway workOrderGateway, PartGateway partGateway, ServiceGateway serviceGateway, WorkOrderQueueGateway workOrderQueueGateway) {
+        return new AddItemsWorkOrderUseCaseImpl(workOrderGateway,partGateway,serviceGateway, workOrderQueueGateway);
     }
 
     @Bean

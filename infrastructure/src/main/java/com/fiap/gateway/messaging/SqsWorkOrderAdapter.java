@@ -4,66 +4,67 @@ import com.fiap.application.gateway.workorder.WorkOrderQueueGateway;
 import com.fiap.core.domain.workorder.WorkOrder;
 import com.fiap.gateway.messaging.dto.*;
 import io.awspring.cloud.sqs.operations.SqsTemplate;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
-@RequiredArgsConstructor
 public class SqsWorkOrderAdapter implements WorkOrderQueueGateway {
 
     private final SqsTemplate sqsTemplate;
 
-    @Value("${aws.sqs.queue.stock-commands}")
-    private String stockQueueUrl;
+    @Value("${aws.sqs.queue.stock-request}")
+    private String stockRequestQueue;
 
-    @Value("${aws.sqs.queue.payment-commands}")
-    private String paymentQueueUrl;
+    @Value("${aws.sqs.queue.stock-cancel}")
+    private String stockCancelQueue;
+
+    @Value("${aws.sqs.queue.payment-request}")
+    private String paymentRequestQueue;
+
+    public SqsWorkOrderAdapter(SqsTemplate sqsTemplate) {
+        this.sqsTemplate = sqsTemplate;
+    }
 
     @Override
     public void publishStockReservation(WorkOrder workOrder) {
-        List<StockReservationItem> itemsDto = workOrder.getWorkOrderParts().stream()
-                .map(part -> new StockReservationItem(
-                        part.getPartId(),
-                        part.getQuantity()
-                ))
-                .toList();
+        List<StockReservationItem> items = workOrder.getWorkOrderParts().stream()
+                .map(part -> new StockReservationItem(part.getPart().getId(), part.getQuantity()))
+                .collect(Collectors.toList());
 
-        StockReservationEvent event = new StockReservationEvent(
-                workOrder.getId().toString(),
-                itemsDto
-        );
+        StockReservationEvent event = new StockReservationEvent(workOrder.getId().toString(), items);
 
-        sqsTemplate.send(to -> to.queue(stockQueueUrl).payload(event));
-        System.out.println("Enviado comando de reserva para OS: " + workOrder.getId());
+        System.out.println("Enviando comando de RESERVA para OS: " + workOrder.getId() + " na fila " + stockRequestQueue);
+        sqsTemplate.send(stockRequestQueue, event);
     }
 
     @Override
     public void publishStockCancellation(WorkOrder workOrder) {
         StockCancellationEvent event = new StockCancellationEvent(workOrder.getId());
 
-        sqsTemplate.send(to -> to.queue(stockQueueUrl).payload(event));
-        System.out.println("Enviado comando de cancelamento de reserva para OS: " + workOrder.getId());
-    }
-
-    @Override
-    public void publishStockDecrease(WorkOrder workOrder) {
-        StockDecreaseEvent event = new StockDecreaseEvent(workOrder.getId().toString());
-
-        sqsTemplate.send(to -> to.queue(stockQueueUrl).payload(event));
-        System.out.println("Enviado comando de baixa efetiva de estoque para OS: " + workOrder.getId());
+        System.out.println("Enviando comando de CANCELAMENTO DE ESTOQUE para OS: " + workOrder.getId() + " na fila " + stockCancelQueue);
+        sqsTemplate.send(stockCancelQueue, event);
     }
 
     @Override
     public void publishPaymentRequest(WorkOrder workOrder) {
         PaymentRequestEvent event = new PaymentRequestEvent(
                 workOrder.getId().toString(),
+                workOrder.getCustomer().getId().toString(),
                 workOrder.getTotalAmount()
         );
 
-        sqsTemplate.send(to -> to.queue(paymentQueueUrl).payload(event));
-        System.out.println("Enviada solicitação de pagamento para OS: " + workOrder.getId());
+        System.out.println("Enviando solicitação de PAGAMENTO para OS: " + workOrder.getId() + " do Cliente: " + workOrder.getCustomer().getId() + " na fila " + paymentRequestQueue);
+        sqsTemplate.send(paymentRequestQueue, event);
+    }
+
+    @Override
+    public void publishStockDecrease(WorkOrder workOrder) {
+        StockDecreaseEvent event = new StockDecreaseEvent(workOrder.getId().toString());
+
+        System.out.println("Enviando comando de BAIXA DE ESTOQUE para OS: " + workOrder.getId() + " na fila " + stockRequestQueue);
+        sqsTemplate.send(stockRequestQueue, event);
     }
 }

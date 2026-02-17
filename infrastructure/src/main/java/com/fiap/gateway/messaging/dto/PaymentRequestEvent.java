@@ -3,6 +3,7 @@ package com.fiap.gateway.messaging.dto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
 import java.math.BigDecimal;
 
 @Data
@@ -10,5 +11,6 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 public class PaymentRequestEvent {
     private String workOrderId;
+    private String customerId;
     private BigDecimal amount;
 }

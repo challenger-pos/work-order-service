@@ -60,17 +60,15 @@ public class RefuseWorkOrderUseCaseImpl implements RefuseWorkOrderUseCase {
 
             logger.info("Refusing work order: {} - Restoring stock for {} parts", id, workOrder.getWorkOrderParts().size());
 
-            // TODO [MS Estoque] SUBSTITUIR workOrder.restoreStock() por publish CMD_CANCELAR_RESERVA {workOrderId} na fila q-estoque-cmd
             workOrder.setStatus(WorkOrderStatus.REFUSED);
             workOrder.setFinishedAt(LocalDateTime.now());
 
             workOrderGateway.save(workOrder);
 
-            // TODO chamada para reverter o estoque
-//            workOrderQueueGateway.publishStockCancellation(workOrder);
+            workOrderQueueGateway.publishStockCancellation(workOrder);
 
-            // Salvar histórico com status COMPLETED
-            WorkOrderHistory history = new WorkOrderHistory(workOrder.getId(), WorkOrderStatus.COMPLETED);
+            // Salvar histórico com status REFUSED
+            WorkOrderHistory history = new WorkOrderHistory(workOrder.getId(), WorkOrderStatus.REFUSED);
             history.setCreatedAt(LocalDateTime.now());
             workOrderGateway.saveHistory(history);
 

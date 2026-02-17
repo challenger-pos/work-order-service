@@ -4,15 +4,12 @@ import com.fiap.core.domain.customer.Customer;
 import com.fiap.core.domain.user.User;
 import com.fiap.core.domain.vehicle.Vehicle;
 import com.fiap.core.exception.BadRequestException;
-import com.fiap.core.exception.BusinessRuleException;
 import com.fiap.core.exception.enums.ErrorCodeEnum;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 public class WorkOrder {
     private UUID id;
@@ -40,9 +37,6 @@ public class WorkOrder {
         this.workOrderParts = workOrderParts;
         this.workOrderServices = workOrderServices;
         this.status = WorkOrderStatus.RECEIVED;
-        // TODO [MS Estoque] Apos criar OS, status deve mudar para AWAITING_STOCK (nao RECEIVED direto).
-        //   Publicar CMD_RESERVAR {workOrderId, itens[{partId, quantity}]} na fila q-estoque-cmd.
-        //   Status so muda para RECEIVED quando EVT_RESERVADO for recebido via q-os-events.
         this.createdAt = LocalDateTime.now();
     }
 

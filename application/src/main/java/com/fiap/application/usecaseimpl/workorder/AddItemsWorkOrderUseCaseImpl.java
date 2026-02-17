@@ -3,6 +3,7 @@ package com.fiap.application.usecaseimpl.workorder;
 import com.fiap.application.gateway.part.PartGateway;
 import com.fiap.application.gateway.service.ServiceGateway;
 import com.fiap.application.gateway.workorder.WorkOrderGateway;
+import com.fiap.application.gateway.workorder.WorkOrderQueueGateway;
 import com.fiap.core.domain.part.Part;
 import com.fiap.core.domain.service.Service;
 import com.fiap.core.domain.workorder.WorkOrder;
@@ -14,24 +15,20 @@ import com.fiap.core.exception.BusinessRuleException;
 import com.fiap.core.exception.NotFoundException;
 import com.fiap.core.exception.enums.ErrorCodeEnum;
 import com.fiap.usecase.workorder.AddItemsWorkOrderUseCase;
+import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+@RequiredArgsConstructor
 public class AddItemsWorkOrderUseCaseImpl implements AddItemsWorkOrderUseCase {
 
     private final WorkOrderGateway workOrderGateway;
-
-    public AddItemsWorkOrderUseCaseImpl(WorkOrderGateway workOrderGateway, PartGateway partGateway, ServiceGateway serviceGateway) {
-        this.workOrderGateway = workOrderGateway;
-        this.partGateway = partGateway;
-        this.serviceGateway = serviceGateway;
-    }
-
     private final PartGateway partGateway;
     private final ServiceGateway serviceGateway;
+    private final WorkOrderQueueGateway workOrderQueueGateway;
 
     @Override
     public WorkOrder execute(UUID workOrderId, WorkOrder increaseWorkOrder) throws NotFoundException, BusinessRuleException, BadRequestException {
@@ -64,8 +61,8 @@ public class AddItemsWorkOrderUseCaseImpl implements AddItemsWorkOrderUseCase {
 
         workOrder.recalculateTotal();
 
-        //TODO Chamar fila para validar Estoque
         workOrder.setStatus(WorkOrderStatus.APPROVAL_STOCK);
+        workOrderQueueGateway.publishStockReservation(workOrder);
 
         return workOrderGateway.save(workOrder);
     }

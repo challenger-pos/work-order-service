@@ -67,8 +67,7 @@ public class ApproveWorkOrderUseCaseImpl implements ApproveWorkOrderUseCase {
             history.setCreatedAt(LocalDateTime.now());
             workOrderGateway.saveHistory(history);
 
-            //TODO aqui está a chamada para reservar o estoque
-//            workOrderQueueGateway.publishStockReservation(workOrder);
+            workOrderQueueGateway.publishPaymentRequest(workOrder);
             logger.info("Work order approved successfully: {} - New status: IN_PROGRESS", id);
         } finally {
             MDC.remove("workorder.id");

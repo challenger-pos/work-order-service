@@ -3,6 +3,7 @@ package com.fiap.application.usecaseimpl.workorder;
 import com.fiap.application.gateway.part.PartGateway;
 import com.fiap.application.gateway.service.ServiceGateway;
 import com.fiap.application.gateway.workorder.WorkOrderGateway;
+import com.fiap.application.gateway.workorder.WorkOrderQueueGateway;
 import com.fiap.core.domain.part.Money;
 import com.fiap.core.domain.part.Part;
 import com.fiap.core.domain.service.Service;
@@ -29,6 +30,7 @@ class AddItemsWorkOrderUseCaseImplTest {
     WorkOrderGateway workOrderGateway = mock(WorkOrderGateway.class);
     PartGateway partGateway = mock(PartGateway.class);
     ServiceGateway serviceGateway = mock(ServiceGateway.class);
+    WorkOrderQueueGateway workOrderQueueGateway = mock (WorkOrderQueueGateway.class);
 
     WorkOrder existingOrder = mock(WorkOrder.class);
     WorkOrder increaseOrder = mock(WorkOrder.class);
@@ -105,7 +107,7 @@ class AddItemsWorkOrderUseCaseImplTest {
         when(workOrderGateway.findById(woId)).thenReturn(Optional.empty());
 
         AddItemsWorkOrderUseCaseImpl useCase =
-                new AddItemsWorkOrderUseCaseImpl(workOrderGateway, partGateway, serviceGateway);
+                new AddItemsWorkOrderUseCaseImpl(workOrderGateway, partGateway, serviceGateway, workOrderQueueGateway);
 
         assertThrows(NotFoundException.class, () -> useCase.execute(woId, increaseOrder));
 
