@@ -38,7 +38,7 @@ public class WorkOrderSqsListener {
             System.out.println("Evento Recebido: Baixa de Estoque APROVADA. Payload: " + message);
             UUID workOrderId = extractWorkOrderId(message);
 
-            updateStatusWorkOrderUseCase.execute(workOrderId, WorkOrderStatus.APPROVAL_STOCK.name());
+            updateStatusWorkOrderUseCase.execute(workOrderId, WorkOrderStatus.AWAITING_APPROVAL.name());
         } catch (Exception e) {
             System.err.println("Erro ao processar baixa de estoque: " + e.getMessage());
             throw new RuntimeException(e);

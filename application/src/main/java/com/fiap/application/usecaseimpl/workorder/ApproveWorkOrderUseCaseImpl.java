@@ -58,16 +58,16 @@ public class ApproveWorkOrderUseCaseImpl implements ApproveWorkOrderUseCase {
             MDC.put("workorder.status", workOrder.getStatus().getDescription());
             logger.info("Approving work order: {} - Parts count: {}", id, workOrder.getWorkOrderParts().size());
 
-            workOrder.setStatus(WorkOrderStatus.APPROVAL_STOCK);
+            workOrder.setStatus(WorkOrderStatus.IN_PROGRESS);
             workOrder.setApprovedAt(LocalDateTime.now());
 
             workOrderGateway.save(workOrder);
+            workOrderQueueGateway.publishStockDecrease(workOrder);
 
-            WorkOrderHistory history = new WorkOrderHistory(workOrder.getId(), WorkOrderStatus.APPROVAL_STOCK);
+            WorkOrderHistory history = new WorkOrderHistory(workOrder.getId(), WorkOrderStatus.IN_PROGRESS);
             history.setCreatedAt(LocalDateTime.now());
             workOrderGateway.saveHistory(history);
 
-            workOrderQueueGateway.publishPaymentRequest(workOrder);
             logger.info("Work order approved successfully: {} - New status: IN_PROGRESS", id);
         } finally {
             MDC.remove("workorder.id");
