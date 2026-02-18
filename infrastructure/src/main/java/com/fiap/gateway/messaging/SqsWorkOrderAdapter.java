@@ -45,9 +45,14 @@ public class SqsWorkOrderAdapter implements WorkOrderQueueGateway {
 
     @Override
     public void publishStockCancellation(WorkOrder workOrder) {
-        StockCancellationEvent event = new StockCancellationEvent(workOrder.getId());
+        List<StockCancelItem> items = workOrder.getWorkOrderParts().stream()
+                .map(part -> new StockCancelItem(part.getPart().getId(), part.getQuantity()))
+                .collect(Collectors.toList());
+
+        StockCancelRequestedEvent event = new StockCancelRequestedEvent(workOrder.getId(), items);
 
         System.out.println("Enviando comando de CANCELAMENTO DE ESTOQUE para OS: " + workOrder.getId() + " na fila " + stockCancelQueue);
+
         sqsTemplate.send(stockCancelQueue, event);
     }
 

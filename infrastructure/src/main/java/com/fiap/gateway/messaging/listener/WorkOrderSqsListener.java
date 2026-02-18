@@ -24,7 +24,7 @@ public class WorkOrderSqsListener {
         this.objectMapper = objectMapper;
     }
 
-    @SqsListener("${aws.sqs.queue.stock-approved}")
+    @SqsListener("${aws.sqs.queue.stock-reserved}")
     public void listenStockApproved(StockReservedEvent event) throws NotFoundException, BadRequestException {
         System.out.println("Evento Recebido: Baixa de Estoque APROVADA. OS: " + event.workOrderId());
 

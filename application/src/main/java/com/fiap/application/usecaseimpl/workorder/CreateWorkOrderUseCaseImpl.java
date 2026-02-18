@@ -85,6 +85,8 @@ public class CreateWorkOrderUseCaseImpl implements CreateWorkOrderUseCase {
         WorkOrder savedWorkOrder = workOrderGateway.save(workOrder);
 
         WorkOrderHistory history = new WorkOrderHistory(savedWorkOrder.getId(), WorkOrderStatus.RECEIVED);
+
+        //TODO criar reserva quando criar a Ordem e ela tiver peças vinculadas
         history.setCreatedAt(savedWorkOrder.getCreatedAt());
         workOrderGateway.saveHistory(history);
 
