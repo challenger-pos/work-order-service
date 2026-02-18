@@ -12,5 +12,6 @@ import java.math.BigDecimal;
 public class PaymentRequestEvent {
     private String workOrderId;
     private String customerId;
+    private String firstName;
     private BigDecimal amount;
 }

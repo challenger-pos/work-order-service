@@ -61,6 +61,7 @@ public class SqsWorkOrderAdapter implements WorkOrderQueueGateway {
         PaymentRequestEvent event = new PaymentRequestEvent(
                 workOrder.getId().toString(),
                 workOrder.getCustomer().getId().toString(),
+                workOrder.getCustomer().getName(),
                 workOrder.getTotalAmount()
         );
 
