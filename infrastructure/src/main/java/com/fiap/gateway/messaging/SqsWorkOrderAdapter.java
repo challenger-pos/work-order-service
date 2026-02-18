@@ -24,6 +24,9 @@ public class SqsWorkOrderAdapter implements WorkOrderQueueGateway {
     @Value("${aws.sqs.queue.payment-request}")
     private String paymentRequestQueue;
 
+    @Value("${aws.sqs.queue.stock-approved}")
+    private String stockApprovedQueue;
+
     public SqsWorkOrderAdapter(SqsTemplate sqsTemplate) {
         this.sqsTemplate = sqsTemplate;
     }
@@ -62,9 +65,13 @@ public class SqsWorkOrderAdapter implements WorkOrderQueueGateway {
 
     @Override
     public void publishStockDecrease(WorkOrder workOrder) {
-        StockDecreaseEvent event = new StockDecreaseEvent(workOrder.getId().toString());
+        List<StockApprovedItem> items = workOrder.getWorkOrderParts().stream()
+                .map(p -> new StockApprovedItem(p.getPart().getId(), p.getQuantity()))
+                .collect(Collectors.toList());
 
-        System.out.println("Enviando comando de BAIXA DE ESTOQUE para OS: " + workOrder.getId() + " na fila " + stockRequestQueue);
-        sqsTemplate.send(stockRequestQueue, event);
+        StockApprovedEvent event = new StockApprovedEvent(workOrder.getId(), items);
+
+        System.out.println("Enviando EFETIVAÇÃO DE BAIXA para Stock: " + workOrder.getId());
+        sqsTemplate.send(stockApprovedQueue, event);
     }
 }

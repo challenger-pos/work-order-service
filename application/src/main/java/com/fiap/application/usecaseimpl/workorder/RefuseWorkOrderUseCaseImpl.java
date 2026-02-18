@@ -67,7 +67,6 @@ public class RefuseWorkOrderUseCaseImpl implements RefuseWorkOrderUseCase {
 
             workOrderQueueGateway.publishStockCancellation(workOrder);
 
-            // Salvar histórico com status REFUSED
             WorkOrderHistory history = new WorkOrderHistory(workOrder.getId(), WorkOrderStatus.REFUSED);
             history.setCreatedAt(LocalDateTime.now());
             workOrderGateway.saveHistory(history);

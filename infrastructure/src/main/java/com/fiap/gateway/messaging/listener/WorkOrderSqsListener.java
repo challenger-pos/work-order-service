@@ -2,7 +2,11 @@ package com.fiap.gateway.messaging.listener;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fiap.core.events.StockFailedEvent;
+import com.fiap.core.events.StockReservedEvent;
 import com.fiap.core.domain.workorder.WorkOrderStatus;
+import com.fiap.core.exception.BadRequestException;
+import com.fiap.core.exception.NotFoundException;
 import com.fiap.usecase.workorder.UpdateStatusWorkOrderUseCase;
 import io.awspring.cloud.sqs.annotation.SqsListener;
 import org.springframework.stereotype.Component;
@@ -20,29 +24,18 @@ public class WorkOrderSqsListener {
         this.objectMapper = objectMapper;
     }
 
-    @SqsListener("${aws.sqs.queue.stock-failed}")
-    public void listenStockFailed(String message) {
-        try {
-            System.out.println("Evento Recebido: Estoque FALHOU. Payload: " + message);
-            UUID workOrderId = extractWorkOrderId(message);
-            updateStatusWorkOrderUseCase.execute(workOrderId, WorkOrderStatus.REFUSED_STOCK.name());
-        } catch (Exception e) {
-            System.err.println("Erro ao processar falha de estoque: " + e.getMessage());
-            throw new RuntimeException(e);
-        }
+    @SqsListener("${aws.sqs.queue.stock-approved}")
+    public void listenStockApproved(StockReservedEvent event) throws NotFoundException, BadRequestException {
+        System.out.println("Evento Recebido: Baixa de Estoque APROVADA. OS: " + event.workOrderId());
+
+        updateStatusWorkOrderUseCase.execute(event.workOrderId(), WorkOrderStatus.AWAITING_APPROVAL.name());
     }
 
-    @SqsListener("${aws.sqs.queue.stock-approved}")
-    public void listenStockApproved(String message) {
-        try {
-            System.out.println("Evento Recebido: Baixa de Estoque APROVADA. Payload: " + message);
-            UUID workOrderId = extractWorkOrderId(message);
+    @SqsListener("${aws.sqs.queue.stock-failed}")
+    public void listenStockFailed(StockFailedEvent event) throws NotFoundException, BadRequestException {
+        System.out.println("Evento Recebido: Estoque FALHOU. OS: " + event.workOrderId() + " Motivo: " + event.reason());
 
-            updateStatusWorkOrderUseCase.execute(workOrderId, WorkOrderStatus.AWAITING_APPROVAL.name());
-        } catch (Exception e) {
-            System.err.println("Erro ao processar baixa de estoque: " + e.getMessage());
-            throw new RuntimeException(e);
-        }
+        updateStatusWorkOrderUseCase.execute(event.workOrderId(), WorkOrderStatus.REFUSED_STOCK.name());
     }
 
     @SqsListener("${aws.sqs.queue.payment-success}")
