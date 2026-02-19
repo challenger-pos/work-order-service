@@ -10,16 +10,20 @@ import com.fiap.core.domain.service.Service;
 import com.fiap.core.domain.workorder.WorkOrder;
 import com.fiap.core.domain.workorder.WorkOrderPart;
 import com.fiap.core.domain.workorder.WorkOrderService;
-import com.fiap.core.exception.BadRequestException;
-import com.fiap.core.exception.BusinessRuleException;
+import com.fiap.core.domain.workorder.WorkOrderStatus;
 import com.fiap.core.exception.NotFoundException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InOrder;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -27,146 +31,127 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class AddItemsWorkOrderUseCaseImplTest {
 
-    WorkOrderGateway workOrderGateway = mock(WorkOrderGateway.class);
-    PartGateway partGateway = mock(PartGateway.class);
-    ServiceGateway serviceGateway = mock(ServiceGateway.class);
-    WorkOrderQueueGateway workOrderQueueGateway = mock (WorkOrderQueueGateway.class);
+    @Mock private WorkOrderGateway workOrderGateway;
+    @Mock private PartGateway partGateway;
+    @Mock private ServiceGateway serviceGateway;
+    @Mock private WorkOrderQueueGateway workOrderQueueGateway;
 
-    WorkOrder existingOrder = mock(WorkOrder.class);
-    WorkOrder increaseOrder = mock(WorkOrder.class);
-    WorkOrder savedOrder = mock(WorkOrder.class);
+    private AddItemsWorkOrderUseCaseImpl useCase;
 
-    //TODO removido por conta do stock
-//    @Test
-//    void shouldAddItemsRecalcReserveAndPersist() throws Exception {
-//        UUID woId = UUID.randomUUID();
-//        UUID pid1 = UUID.randomUUID();
-//        UUID pid2 = UUID.randomUUID();
-//        UUID sid1 = UUID.randomUUID();
-//
-//        WorkOrderPart incP1 = mock(WorkOrderPart.class);
-//        WorkOrderPart incP2 = mock(WorkOrderPart.class);
-//        when(incP1.getPartId()).thenReturn(pid1);
-//        when(incP2.getPartId()).thenReturn(pid2);
-//        when(incP1.getQuantity()).thenReturn(3);
-//        when(incP2.getQuantity()).thenReturn(2);
-//
-//        WorkOrderService incS1 = mock(WorkOrderService.class);
-//        when(incS1.getServiceId()).thenReturn(sid1);
-//        when(incS1.getQuantity()).thenReturn(1);
-//
-//        when(increaseOrder.getWorkOrderParts()).thenReturn(List.of(incP1, incP2));
-//        when(increaseOrder.getWorkOrderServices()).thenReturn(List.of(incS1));
-//
-//        Part p1 = mock(Part.class);
-//        Part p2 = mock(Part.class);
-//        when(p1.getId()).thenReturn(pid1);
-//        when(p2.getId()).thenReturn(pid2);
-//        when(p1.getPrice()).thenReturn(Money.of(new BigDecimal("10.00")));
-//        when(p2.getPrice()).thenReturn(Money.of(new BigDecimal("5.00")));
-//
-//        Service s1 = mock(Service.class);
-//        when(s1.getId()).thenReturn(sid1);
-//        when(s1.getBasePrice()).thenReturn(new BigDecimal("100.00"));
-//
-//        List<WorkOrderPart> currentParts = new ArrayList<>();
-//        List<WorkOrderService> currentSvcs = new ArrayList<>();
-//        when(existingOrder.getWorkOrderParts()).thenReturn(currentParts);
-//        when(existingOrder.getWorkOrderServices()).thenReturn(currentSvcs);
-//
-//        when(workOrderGateway.findById(woId)).thenReturn(Optional.of(existingOrder));
-//        when(partGateway.findByIds(List.of(pid1, pid2))).thenReturn(List.of(p1, p2));
-//        when(serviceGateway.findByIds(List.of(sid1))).thenReturn(List.of(s1));
-//        when(workOrderGateway.save(existingOrder)).thenReturn(savedOrder);
-//
-//        AddItemsWorkOrderUseCaseImpl useCase =
-//                new AddItemsWorkOrderUseCaseImpl(workOrderGateway, partGateway, serviceGateway);
-//
-//        WorkOrder result = useCase.execute(woId, increaseOrder);
-//
-//        assertSame(savedOrder, result);
-//        assertEquals(2, currentParts.size());
-//        assertEquals(1, currentSvcs.size());
-//
-//        InOrder inOrder = inOrder(workOrderGateway, existingOrder, partGateway, serviceGateway);
-//        inOrder.verify(workOrderGateway).findById(woId);
-//        inOrder.verify(existingOrder).restoreStock();
-//        inOrder.verify(partGateway).findByIds(List.of(pid1, pid2));
-//        inOrder.verify(serviceGateway).findByIds(List.of(sid1));
-//        inOrder.verify(existingOrder).recalculateTotal();
-//        inOrder.verify(existingOrder).reserveParts();
-//        inOrder.verify(partGateway).saveAll(List.of(p1, p2));
-//        inOrder.verify(workOrderGateway).save(existingOrder);
-//
-//        verifyNoMoreInteractions(workOrderGateway, partGateway, serviceGateway);
-//    }
+    @BeforeEach
+    void setUp() {
+        useCase = new AddItemsWorkOrderUseCaseImpl(
+                workOrderGateway, partGateway, serviceGateway, workOrderQueueGateway
+        );
+    }
+
+    @Test
+    void shouldAddItemsRecalculateChangeStatusPublishAndSave() throws Exception {
+        UUID workOrderId = UUID.randomUUID();
+        UUID partId = UUID.randomUUID();
+        UUID serviceId = UUID.randomUUID();
+
+        WorkOrder existingOrder = mock(WorkOrder.class);
+        when(workOrderGateway.findById(workOrderId)).thenReturn(Optional.of(existingOrder));
+
+        List<WorkOrderPart> currentParts = new ArrayList<>();
+        List<WorkOrderService> currentServices = new ArrayList<>();
+        when(existingOrder.getWorkOrderParts()).thenReturn(currentParts);
+        when(existingOrder.getWorkOrderServices()).thenReturn(currentServices);
+
+        WorkOrder increaseOrder = mock(WorkOrder.class);
+
+        WorkOrderPart incPart = mock(WorkOrderPart.class);
+        when(incPart.getPartId()).thenReturn(partId);
+        when(incPart.getQuantity()).thenReturn(2);
+
+        WorkOrderService incService = mock(WorkOrderService.class);
+        when(incService.getServiceId()).thenReturn(serviceId);
+        when(incService.getQuantity()).thenReturn(1);
+
+        when(increaseOrder.getWorkOrderParts()).thenReturn(List.of(incPart));
+        when(increaseOrder.getWorkOrderServices()).thenReturn(List.of(incService));
+
+        Part part = mock(Part.class);
+        when(part.getId()).thenReturn(partId);
+        when(part.getPrice()).thenReturn(Money.of(new BigDecimal("50.00")));
+        when(partGateway.findByIds(List.of(partId))).thenReturn(List.of(part));
+
+        Service service = mock(Service.class);
+        when(service.getId()).thenReturn(serviceId);
+        when(service.getBasePrice()).thenReturn(new BigDecimal("150.00"));
+        when(serviceGateway.findByIds(List.of(serviceId))).thenReturn(List.of(service));
+
+        WorkOrder savedOrder = mock(WorkOrder.class);
+        when(workOrderGateway.save(existingOrder)).thenReturn(savedOrder);
+
+        WorkOrder result = useCase.execute(workOrderId, increaseOrder);
+
+        assertSame(savedOrder, result);
+        assertEquals(1, currentParts.size());
+        assertEquals(1, currentServices.size());
+
+        InOrder inOrder = inOrder(workOrderGateway, partGateway, serviceGateway, existingOrder, workOrderQueueGateway);
+        inOrder.verify(workOrderGateway).findById(workOrderId);
+        inOrder.verify(partGateway).findByIds(List.of(partId));
+        inOrder.verify(serviceGateway).findByIds(List.of(serviceId));
+        inOrder.verify(existingOrder).recalculateTotal();
+        inOrder.verify(existingOrder).setStatus(WorkOrderStatus.AWAITING_STOCK_CONFIRMATION);
+        inOrder.verify(workOrderQueueGateway).publishStockReservation(existingOrder);
+        inOrder.verify(workOrderGateway).save(existingOrder);
+
+        verifyNoMoreInteractions(workOrderGateway, partGateway, serviceGateway, workOrderQueueGateway);
+    }
 
     @Test
     void shouldThrowWhenWorkOrderNotFound() {
-        UUID woId = UUID.randomUUID();
-        when(workOrderGateway.findById(woId)).thenReturn(Optional.empty());
+        UUID workOrderId = UUID.randomUUID();
+        WorkOrder increaseOrder = mock(WorkOrder.class);
 
-        AddItemsWorkOrderUseCaseImpl useCase =
-                new AddItemsWorkOrderUseCaseImpl(workOrderGateway, partGateway, serviceGateway, workOrderQueueGateway);
+        when(workOrderGateway.findById(workOrderId)).thenReturn(Optional.empty());
 
-        assertThrows(NotFoundException.class, () -> useCase.execute(woId, increaseOrder));
+        assertThrows(NotFoundException.class, () -> useCase.execute(workOrderId, increaseOrder));
 
-        verify(workOrderGateway).findById(woId);
+        verify(workOrderGateway).findById(workOrderId);
         verifyNoMoreInteractions(workOrderGateway);
-        verifyNoInteractions(partGateway, serviceGateway);
+        verifyNoInteractions(partGateway, serviceGateway, workOrderQueueGateway);
     }
 
-    //TODO removido por conta do approveStock
-//    @Test
-//    void shouldPropagateBadRequestFromReserveParts() throws Exception {
-//        UUID woId = UUID.randomUUID();
-//
-//        when(workOrderGateway.findById(woId)).thenReturn(Optional.of(existingOrder));
-//
-//        when(increaseOrder.getWorkOrderParts()).thenReturn(List.of());
-//        when(increaseOrder.getWorkOrderServices()).thenReturn(List.of());
-//
-//        when(partGateway.findByIds(List.of())).thenReturn(List.of());
-//        when(serviceGateway.findByIds(List.of())).thenReturn(List.of());
-//
-//        List<WorkOrderPart> currentParts = new ArrayList<>();
-//        List<WorkOrderService> currentSvcs = new ArrayList<>();
-//        when(existingOrder.getWorkOrderParts()).thenReturn(currentParts);
-//        when(existingOrder.getWorkOrderServices()).thenReturn(currentSvcs);
-//
-//        doThrow(new BadRequestException("x", "y")).when(existingOrder).reserveParts();
-//
-//        AddItemsWorkOrderUseCaseImpl useCase =
-//                new AddItemsWorkOrderUseCaseImpl(workOrderGateway, partGateway, serviceGateway);
-//
-//        assertThrows(BadRequestException.class, () -> useCase.execute(woId, increaseOrder));
-//
-//        verify(workOrderGateway).findById(woId);
-//        verify(existingOrder).restoreStock();
-//        verify(partGateway).findByIds(List.of());
-//        verify(serviceGateway).findByIds(List.of());
-//        verify(existingOrder).recalculateTotal();
-//        verify(existingOrder).reserveParts();
-//
-//        verifyNoMoreInteractions(workOrderGateway, partGateway, serviceGateway);
-//    }
+    @Test
+    void shouldAddOnlyPartsRecalculateChangeStatusAndSave() throws Exception {
+        UUID workOrderId = UUID.randomUUID();
+        UUID partId = UUID.randomUUID();
 
+        WorkOrder existingOrder = mock(WorkOrder.class);
+        when(workOrderGateway.findById(workOrderId)).thenReturn(Optional.of(existingOrder));
 
-    //TODO removido por conta do approveStock
-//    @Test
-//    void shouldPropagateBusinessRuleFromRestoreStock() throws Exception {
-//        UUID woId = UUID.randomUUID();
-//        when(workOrderGateway.findById(woId)).thenReturn(Optional.of(existingOrder));
-//        doThrow(new BusinessRuleException("b", "c")).when(existingOrder).restoreStock();
-//
-//        AddItemsWorkOrderUseCaseImpl useCase =
-//                new AddItemsWorkOrderUseCaseImpl(workOrderGateway, partGateway, serviceGateway);
-//
-//        assertThrows(BusinessRuleException.class, () -> useCase.execute(woId, increaseOrder));
-//
-//        verify(workOrderGateway).findById(woId);
-//        verify(existingOrder).restoreStock();
-//        verifyNoMoreInteractions(workOrderGateway, existingOrder);
-//        verifyNoInteractions(partGateway, serviceGateway);
-//    }
+        when(existingOrder.getWorkOrderParts()).thenReturn(new ArrayList<>());
+        when(existingOrder.getWorkOrderServices()).thenReturn(new ArrayList<>());
+
+        WorkOrder increaseOrder = mock(WorkOrder.class);
+
+        WorkOrderPart incPart = mock(WorkOrderPart.class);
+        when(incPart.getPartId()).thenReturn(partId);
+        when(incPart.getQuantity()).thenReturn(2);
+
+        when(increaseOrder.getWorkOrderParts()).thenReturn(List.of(incPart));
+        when(increaseOrder.getWorkOrderServices()).thenReturn(List.of());
+
+        Part part = mock(Part.class);
+        when(part.getId()).thenReturn(partId);
+        when(part.getPrice()).thenReturn(Money.of(new BigDecimal("50.00")));
+        when(partGateway.findByIds(List.of(partId))).thenReturn(List.of(part));
+
+        when(serviceGateway.findByIds(List.of())).thenReturn(List.of());
+
+        when(workOrderGateway.save(existingOrder)).thenReturn(existingOrder);
+
+        WorkOrder result = useCase.execute(workOrderId, increaseOrder);
+
+        assertNotNull(result);
+        verify(partGateway).findByIds(List.of(partId));
+        verify(serviceGateway).findByIds(List.of());
+        verify(existingOrder).recalculateTotal();
+        verify(workOrderQueueGateway).publishStockReservation(existingOrder);
+    }
 }

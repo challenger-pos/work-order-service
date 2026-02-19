@@ -7,215 +7,212 @@ import com.fiap.application.gateway.user.UserGateway;
 import com.fiap.application.gateway.vehicle.VehicleGateway;
 import com.fiap.application.gateway.workorder.WorkOrderGateway;
 import com.fiap.core.domain.customer.Customer;
-import com.fiap.core.domain.part.Part;
 import com.fiap.core.domain.part.Money;
+import com.fiap.core.domain.part.Part;
 import com.fiap.core.domain.service.Service;
 import com.fiap.core.domain.user.User;
 import com.fiap.core.domain.vehicle.Vehicle;
 import com.fiap.core.domain.workorder.WorkOrder;
+import com.fiap.core.domain.workorder.WorkOrderHistory;
 import com.fiap.core.domain.workorder.WorkOrderPart;
 import com.fiap.core.domain.workorder.WorkOrderService;
-import com.fiap.core.exception.BadRequestException;
-import com.fiap.core.exception.BusinessRuleException;
 import com.fiap.core.exception.NotFoundException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InOrder;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class CreateWorkOrderUseCaseImplTest {
 
-    @Mock WorkOrderGateway workOrderGateway;
-    @Mock CustomerGateway customerGateway;
-    @Mock VehicleGateway vehicleGateway;
-    @Mock UserGateway userGateway;
-    @Mock PartGateway partGateway;
-    @Mock ServiceGateway serviceGateway;
+    @Mock private WorkOrderGateway workOrderGateway;
+    @Mock private CustomerGateway customerGateway;
+    @Mock private VehicleGateway vehicleGateway;
+    @Mock private UserGateway userGateway;
+    @Mock private PartGateway partGateway;
+    @Mock private ServiceGateway serviceGateway;
 
-    @Mock WorkOrder workOrder;
-    @Mock WorkOrder savedOrder;
+    private CreateWorkOrderUseCaseImpl useCase;
 
-    @Mock Customer customer;
-    @Mock Vehicle vehicle;
-    @Mock User createdBy;
+    @BeforeEach
+    void setUp() {
+        useCase = new CreateWorkOrderUseCaseImpl(
+                workOrderGateway, customerGateway, vehicleGateway, userGateway, partGateway, serviceGateway
+        );
+    }
 
-    @Mock WorkOrderPart inP1;
-    @Mock WorkOrderPart inP2;
-    @Mock WorkOrderService inS1;
+    @Test
+    void shouldPopulateItemsSaveAndReturn() throws Exception {
+        UUID custId = UUID.randomUUID();
+        UUID vehId = UUID.randomUUID();
+        UUID usrId = UUID.randomUUID();
+        UUID partId = UUID.randomUUID();
+        UUID serviceId = UUID.randomUUID();
+        UUID savedWorkOrderId = UUID.randomUUID();
 
-    @Mock Part p1;
-    @Mock Part p2;
-    @Mock Service s1;
+        WorkOrder inputWorkOrder = mock(WorkOrder.class);
 
-    //TODO removido por conta do reserveParts
-//    @Test
-//    void shouldPopulateItemsReserveSaveAndReturn() throws Exception {
-//        UUID custId = UUID.randomUUID();
-//        UUID vehId  = UUID.randomUUID();
-//        UUID usrId  = UUID.randomUUID();
-//        UUID pid1   = UUID.randomUUID();
-//        UUID pid2   = UUID.randomUUID();
-//        UUID sid1   = UUID.randomUUID();
-//
-//        when(workOrder.getCustomer()).thenReturn(new Customer(custId));
-//        when(workOrder.getVehicle()).thenReturn(new Vehicle(vehId));
-//        when(workOrder.getCreatedBy()).thenReturn(new com.fiap.core.domain.user.User(usrId));
-//
-//        when(customerGateway.findById(custId)).thenReturn(Optional.of(customer));
-//        when(vehicleGateway.findById(vehId)).thenReturn(Optional.of(vehicle));
-//        when(userGateway.findById(usrId)).thenReturn(Optional.of(createdBy));
-//
-//        when(inP1.getPartId()).thenReturn(pid1);
-//        when(inP2.getPartId()).thenReturn(pid2);
-//        when(inP1.getQuantity()).thenReturn(3);
-//        when(inP2.getQuantity()).thenReturn(2);
-//        when(inS1.getServiceId()).thenReturn(sid1);
-//        when(inS1.getQuantity()).thenReturn(1);
-//
-//        when(workOrder.getWorkOrderParts()).thenReturn(List.of(inP1, inP2));
-//        when(workOrder.getWorkOrderServices()).thenReturn(List.of(inS1));
-//
-//        when(p1.getId()).thenReturn(pid1);
-//        when(p2.getId()).thenReturn(pid2);
-//        when(p1.getPrice()).thenReturn(Money.of(new BigDecimal("10.00")));
-//        when(p2.getPrice()).thenReturn(Money.of(new BigDecimal("5.00")));
-//        when(s1.getId()).thenReturn(sid1);
-//        when(s1.getBasePrice()).thenReturn(new BigDecimal("100.00"));
-//
-//        when(partGateway.findByIds(List.of(pid1, pid2))).thenReturn(List.of(p1, p2));
-//        when(serviceGateway.findByIds(List.of(sid1))).thenReturn(List.of(s1));
-//
-//        when(workOrderGateway.save(workOrder)).thenReturn(savedOrder);
-//
-//        CreateWorkOrderUseCaseImpl useCase = new CreateWorkOrderUseCaseImpl(
-//                workOrderGateway, customerGateway, vehicleGateway, userGateway, partGateway, serviceGateway
-//        );
-//
-//        WorkOrder result = useCase.execute(workOrder);
-//
-//        assertSame(savedOrder, result);
-//
-//        // Verificações essenciais de negócio
-//        verify(customerGateway).findById(custId);
-//        verify(vehicleGateway).findById(vehId);
-//        verify(userGateway).findById(usrId);
-//        verify(partGateway).findByIds(anyList());
-//        verify(serviceGateway).findByIds(anyList());
-//
-//        verify(workOrder).setCustomer(customer);
-//        verify(workOrder).setVehicle(vehicle);
-//        verify(workOrder).setCreatedBy(createdBy);
-//        verify(workOrder).recalculateTotal();
-//        verify(workOrder).reserveParts();
-//
-//        // Persistência
-//        verify(partGateway).saveAll(anyList());
-//        verify(workOrderGateway, atLeastOnce()).save(workOrder);
-//
-//        // REMOVIDO: verifyNoMoreInteractions e InOrder para evitar fragilidade
-//    }
+        when(inputWorkOrder.getCustomer()).thenReturn(new Customer(custId));
+        when(inputWorkOrder.getVehicle()).thenReturn(new Vehicle(vehId));
+        when(inputWorkOrder.getCreatedBy()).thenReturn(new User(usrId));
+
+        Customer customer = mock(Customer.class);
+        Vehicle vehicle = mock(Vehicle.class);
+        User user = mock(User.class);
+
+        when(customerGateway.findById(custId)).thenReturn(Optional.of(customer));
+        when(vehicleGateway.findById(vehId)).thenReturn(Optional.of(vehicle));
+        when(userGateway.findById(usrId)).thenReturn(Optional.of(user));
+
+        WorkOrderPart inPart = mock(WorkOrderPart.class);
+        when(inPart.getPartId()).thenReturn(partId);
+        when(inPart.getQuantity()).thenReturn(2);
+
+        WorkOrderService inService = mock(WorkOrderService.class);
+        when(inService.getServiceId()).thenReturn(serviceId);
+        when(inService.getQuantity()).thenReturn(1);
+
+        when(inputWorkOrder.getWorkOrderParts()).thenReturn(List.of(inPart));
+        when(inputWorkOrder.getWorkOrderServices()).thenReturn(List.of(inService));
+
+        Part part = mock(Part.class);
+        when(part.getId()).thenReturn(partId);
+        when(part.getPrice()).thenReturn(Money.of(new BigDecimal("100.00")));
+        when(partGateway.findByIds(List.of(partId))).thenReturn(List.of(part));
+
+        Service service = mock(Service.class);
+        when(service.getId()).thenReturn(serviceId);
+        when(service.getBasePrice()).thenReturn(new BigDecimal("200.00"));
+        when(serviceGateway.findByIds(List.of(serviceId))).thenReturn(List.of(service));
+
+        WorkOrder savedOrder = mock(WorkOrder.class);
+        when(savedOrder.getId()).thenReturn(savedWorkOrderId);
+        when(savedOrder.getCreatedAt()).thenReturn(LocalDateTime.now());
+        when(workOrderGateway.save(inputWorkOrder)).thenReturn(savedOrder);
+
+        WorkOrder result = useCase.execute(inputWorkOrder);
+
+        assertSame(savedOrder, result);
+
+        verify(inputWorkOrder).setCustomer(customer);
+        verify(inputWorkOrder).setVehicle(vehicle);
+        verify(inputWorkOrder).setCreatedBy(user);
+        verify(inputWorkOrder).setWorkOrderParts(anyList());
+        verify(inputWorkOrder).setWorkOrderServices(anyList());
+        verify(inputWorkOrder).recalculateTotal();
+
+        verify(workOrderGateway).save(inputWorkOrder);
+
+        ArgumentCaptor<WorkOrderHistory> historyCaptor = ArgumentCaptor.forClass(WorkOrderHistory.class);
+        verify(workOrderGateway).saveHistory(historyCaptor.capture());
+
+        WorkOrderHistory capturedHistory = historyCaptor.getValue();
+        assertEquals(savedWorkOrderId, capturedHistory.getWorkOrderId());
+        assertEquals("RECEIVED", capturedHistory.getStatus().name());
+    }
 
     @Test
     void shouldStopWhenCustomerNotFound() {
         UUID custId = UUID.randomUUID();
+        WorkOrder workOrder = mock(WorkOrder.class);
         when(workOrder.getCustomer()).thenReturn(new Customer(custId));
         when(customerGateway.findById(custId)).thenReturn(Optional.empty());
-
-        var useCase = new CreateWorkOrderUseCaseImpl(
-                workOrderGateway, customerGateway, vehicleGateway, userGateway, partGateway, serviceGateway
-        );
 
         assertThrows(NotFoundException.class, () -> useCase.execute(workOrder));
 
         verify(customerGateway).findById(custId);
+        verifyNoInteractions(vehicleGateway, userGateway, partGateway, serviceGateway, workOrderGateway);
     }
 
     @Test
     void shouldStopWhenVehicleNotFound() {
         UUID custId = UUID.randomUUID();
-        UUID vehId  = UUID.randomUUID();
+        UUID vehId = UUID.randomUUID();
+        WorkOrder workOrder = mock(WorkOrder.class);
 
         when(workOrder.getCustomer()).thenReturn(new Customer(custId));
         when(workOrder.getVehicle()).thenReturn(new Vehicle(vehId));
 
-        when(customerGateway.findById(custId)).thenReturn(Optional.of(customer));
+        when(customerGateway.findById(custId)).thenReturn(Optional.of(mock(Customer.class)));
         when(vehicleGateway.findById(vehId)).thenReturn(Optional.empty());
-
-        var useCase = new CreateWorkOrderUseCaseImpl(
-                workOrderGateway, customerGateway, vehicleGateway, userGateway, partGateway, serviceGateway
-        );
 
         assertThrows(NotFoundException.class, () -> useCase.execute(workOrder));
 
         verify(customerGateway).findById(custId);
         verify(vehicleGateway).findById(vehId);
+        verifyNoInteractions(userGateway, partGateway, serviceGateway, workOrderGateway);
     }
 
     @Test
     void shouldStopWhenUserNotFound() throws NotFoundException {
         UUID custId = UUID.randomUUID();
-        UUID vehId  = UUID.randomUUID();
-        UUID usrId  = UUID.randomUUID();
+        UUID vehId = UUID.randomUUID();
+        UUID usrId = UUID.randomUUID();
+        WorkOrder workOrder = mock(WorkOrder.class);
 
         when(workOrder.getCustomer()).thenReturn(new Customer(custId));
         when(workOrder.getVehicle()).thenReturn(new Vehicle(vehId));
-        when(workOrder.getCreatedBy()).thenReturn(new com.fiap.core.domain.user.User(usrId));
+        when(workOrder.getCreatedBy()).thenReturn(new User(usrId));
 
-        when(customerGateway.findById(custId)).thenReturn(Optional.of(customer));
-        when(vehicleGateway.findById(vehId)).thenReturn(Optional.of(vehicle));
+        when(customerGateway.findById(custId)).thenReturn(Optional.of(mock(Customer.class)));
+        when(vehicleGateway.findById(vehId)).thenReturn(Optional.of(mock(Vehicle.class)));
         when(userGateway.findById(usrId)).thenReturn(Optional.empty());
-
-        CreateWorkOrderUseCaseImpl useCase = new CreateWorkOrderUseCaseImpl(
-                workOrderGateway, customerGateway, vehicleGateway, userGateway, partGateway, serviceGateway
-        );
 
         assertThrows(NotFoundException.class, () -> useCase.execute(workOrder));
 
         verify(customerGateway).findById(custId);
         verify(vehicleGateway).findById(vehId);
         verify(userGateway).findById(usrId);
+        verifyNoInteractions(partGateway, serviceGateway, workOrderGateway);
     }
 
-    //TODO removido por conta do reserveStock
-//    @Test
-//    void shouldPropagateBadRequestFromReserveParts() throws BusinessRuleException, NotFoundException, BadRequestException {
-//        UUID custId = UUID.randomUUID();
-//        UUID vehId  = UUID.randomUUID();
-//        UUID usrId  = UUID.randomUUID();
-//
-//        when(workOrder.getCustomer()).thenReturn(new Customer(custId));
-//        when(workOrder.getVehicle()).thenReturn(new Vehicle(vehId));
-//        when(workOrder.getCreatedBy()).thenReturn(new com.fiap.core.domain.user.User(usrId));
-//
-//        when(customerGateway.findById(custId)).thenReturn(Optional.of(customer));
-//        when(vehicleGateway.findById(vehId)).thenReturn(Optional.of(vehicle));
-//        when(userGateway.findById(usrId)).thenReturn(Optional.of(createdBy));
-//
-//        when(workOrder.getWorkOrderParts()).thenReturn(List.of());
-//        when(workOrder.getWorkOrderServices()).thenReturn(List.of());
-//
-//        when(partGateway.findByIds(anyList())).thenReturn(List.of());
-//        when(serviceGateway.findByIds(anyList())).thenReturn(List.of());
-//
-//        doThrow(new BadRequestException("x","y")).when(workOrder).reserveParts();
-//
-//        CreateWorkOrderUseCaseImpl useCase = new CreateWorkOrderUseCaseImpl(
-//                workOrderGateway, customerGateway, vehicleGateway, userGateway, partGateway, serviceGateway
-//        );
-//
-//        assertThrows(BadRequestException.class, () -> useCase.execute(workOrder));
-//
-//        verify(workOrder).reserveParts();
-//    }
+    @Test
+    void shouldCreateWorkOrderWithoutPartsAndServicesSuccessfully() throws Exception {
+        UUID custId = UUID.randomUUID();
+        UUID vehId = UUID.randomUUID();
+        UUID usrId = UUID.randomUUID();
+        UUID savedWorkOrderId = UUID.randomUUID();
+
+        WorkOrder inputWorkOrder = mock(WorkOrder.class);
+
+        when(inputWorkOrder.getCustomer()).thenReturn(new Customer(custId));
+        when(inputWorkOrder.getVehicle()).thenReturn(new Vehicle(vehId));
+        when(inputWorkOrder.getCreatedBy()).thenReturn(new User(usrId));
+
+        when(customerGateway.findById(custId)).thenReturn(Optional.of(mock(Customer.class)));
+        when(vehicleGateway.findById(vehId)).thenReturn(Optional.of(mock(Vehicle.class)));
+        when(userGateway.findById(usrId)).thenReturn(Optional.of(mock(User.class)));
+
+        when(inputWorkOrder.getWorkOrderParts()).thenReturn(List.of());
+        when(inputWorkOrder.getWorkOrderServices()).thenReturn(List.of());
+
+        when(partGateway.findByIds(List.of())).thenReturn(List.of());
+        when(serviceGateway.findByIds(List.of())).thenReturn(List.of());
+
+        WorkOrder savedOrder = mock(WorkOrder.class);
+        when(savedOrder.getId()).thenReturn(savedWorkOrderId);
+        when(savedOrder.getCreatedAt()).thenReturn(LocalDateTime.now());
+        when(workOrderGateway.save(inputWorkOrder)).thenReturn(savedOrder);
+
+        WorkOrder result = useCase.execute(inputWorkOrder);
+
+        assertSame(savedOrder, result);
+
+        verify(inputWorkOrder).setWorkOrderParts(List.of());
+        verify(inputWorkOrder).setWorkOrderServices(List.of());
+        verify(inputWorkOrder).recalculateTotal();
+        verify(workOrderGateway).save(inputWorkOrder);
+        verify(workOrderGateway).saveHistory(any());
+    }
 }

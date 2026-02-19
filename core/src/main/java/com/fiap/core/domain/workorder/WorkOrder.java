@@ -5,12 +5,14 @@ import com.fiap.core.domain.user.User;
 import com.fiap.core.domain.vehicle.Vehicle;
 import com.fiap.core.exception.BadRequestException;
 import com.fiap.core.exception.enums.ErrorCodeEnum;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+@NoArgsConstructor
 public class WorkOrder {
     private UUID id;
     private Customer customer;

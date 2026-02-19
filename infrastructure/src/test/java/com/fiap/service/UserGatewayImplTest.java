@@ -5,7 +5,6 @@ import com.fiap.core.exception.EmailException;
 import com.fiap.core.exception.NotFoundException;
 import com.fiap.core.exception.PasswordException;
 import com.fiap.core.exception.enums.ErrorCodeEnum;
-import com.fiap.dto.user.CreateUserRequest;
 import com.fiap.gateway.user.UserRepositoryGateway;
 import com.fiap.mapper.user.UserMapper;
 import com.fiap.persistence.entity.user.UserEntity;
@@ -36,7 +35,7 @@ class UserGatewayImplTest {
     void shouldCreateUserSuccessfully() throws EmailException, PasswordException {
         var user = new User(UUID.randomUUID(), "Test User", "teste@gmail.com", "MECHANIC", "Password@123", LocalDateTime.now(), LocalDateTime.now());
 
-        var userEntity = new UserEntity().builder()
+        var userEntity = UserEntity.builder()
                 .id(user.getId())
                 .name(user.getName())
                 .email(user.getEmail())
@@ -75,7 +74,7 @@ class UserGatewayImplTest {
     void shouldUpdateUserSuccessfully() throws PasswordException, EmailException {
         var user = new User(UUID.randomUUID(), "Updated User", "update@gmail.com", "ADMIN", "NewPassword@123", LocalDateTime.now(), LocalDateTime.now());
 
-        var userEntity = new UserEntity().builder()
+        var userEntity = UserEntity.builder()
                 .id(user.getId())
                 .name(user.getName())
                 .email(user.getEmail())
@@ -127,7 +126,8 @@ class UserGatewayImplTest {
         assertEquals(ErrorCodeEnum.USE0007.getMessage(), exception.getMessage());
         assertEquals(ErrorCodeEnum.USE0007.getCode(), exception.getCode());
         verify(userEntityRepository, times(1)).findById(userId);
-        verify(userMapper, never()).toDomain(any(CreateUserRequest.class));
+
+        verify(userMapper, never()).toDomain(any(UserEntity.class));
     }
 
     @Test
@@ -172,6 +172,22 @@ class UserGatewayImplTest {
 
         assertTrue(result.isEmpty());
         verify(userEntityRepository, times(1)).findByEmail(email);
-        verify(userMapper, never()).toDomain(any(CreateUserRequest.class));
+
+        verify(userMapper, never()).toDomain(any(UserEntity.class));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenRepositoryFailsOnSave() throws PasswordException, EmailException {
+        var user = new User(UUID.randomUUID(), "Test", "test@gmail.com", "MECHANIC", "Pass@123", LocalDateTime.now(), LocalDateTime.now());
+        var userEntity = new UserEntity();
+
+        when(userMapper.toEntity(user)).thenReturn(userEntity);
+        when(userEntityRepository.save(userEntity)).thenThrow(new RuntimeException("Database error"));
+
+        assertThrows(RuntimeException.class, () -> userGateway.create(user));
+
+        verify(userMapper, times(1)).toEntity(user);
+        verify(userEntityRepository, times(1)).save(userEntity);
+        verify(userMapper, never()).toDomain(any(UserEntity.class));
     }
 }
