@@ -87,7 +87,7 @@ jobs:
       - name: Build and analyze with SonarQube
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=challenger-pos_work-order-service
+        run: mvn -B clean verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.login=$SONAR_TOKEN -Dsonar.projectKey=challenger-pos_work-order-service -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
         continue-on-error: true
 
       - name: Comment PR with SonarQube results

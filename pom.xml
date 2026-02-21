@@ -47,13 +47,11 @@
 		<sonar.organization>challenger-pos</sonar.organization>
 		<sonar.projectKey>challenger-pos_work-order-service</sonar.projectKey>
 		<sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
+		<sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
 		<sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
-		<sonar.jacoco.reportPath>${project.basedir}/../target/jacoco.exec</sonar.jacoco.reportPath>
 		<sonar.language>java</sonar.language>
 		<sonar.coverage.exclusions>**/config/**/*, **/security/**/*</sonar.coverage.exclusions>
 		<sonar.exclusions>**/dto/**, **/entity/**, **/mapper/**</sonar.exclusions>
-		<sonar.sources>src/main</sonar.sources>
-		<sonar.tests>src/test</sonar.tests>
 	</properties>
 
 	<dependencyManagement>
