@@ -6,10 +6,7 @@ import com.fiap.application.gateway.workorder.WorkOrderGateway;
 import com.fiap.application.gateway.workorder.WorkOrderQueueGateway;
 import com.fiap.core.domain.part.Part;
 import com.fiap.core.domain.service.Service;
-import com.fiap.core.domain.workorder.WorkOrder;
-import com.fiap.core.domain.workorder.WorkOrderPart;
-import com.fiap.core.domain.workorder.WorkOrderService;
-import com.fiap.core.domain.workorder.WorkOrderStatus;
+import com.fiap.core.domain.workorder.*;
 import com.fiap.core.exception.BadRequestException;
 import com.fiap.core.exception.BusinessRuleException;
 import com.fiap.core.exception.NotFoundException;
@@ -17,6 +14,7 @@ import com.fiap.core.exception.enums.ErrorCodeEnum;
 import com.fiap.usecase.workorder.AddItemsWorkOrderUseCase;
 import lombok.RequiredArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -63,6 +61,10 @@ public class AddItemsWorkOrderUseCaseImpl implements AddItemsWorkOrderUseCase {
 
         workOrder.setStatus(WorkOrderStatus.AWAITING_STOCK_CONFIRMATION);
         workOrderQueueGateway.publishStockReservation(workOrder);
+
+        WorkOrderHistory history = new WorkOrderHistory(workOrder.getId(), WorkOrderStatus.AWAITING_STOCK_CONFIRMATION);
+        history.setCreatedAt(LocalDateTime.now());
+        workOrderGateway.saveHistory(history);
 
         return workOrderGateway.save(workOrder);
     }

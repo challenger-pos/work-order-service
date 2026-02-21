@@ -7,10 +7,7 @@ import com.fiap.application.gateway.workorder.WorkOrderQueueGateway;
 import com.fiap.core.domain.part.Money;
 import com.fiap.core.domain.part.Part;
 import com.fiap.core.domain.service.Service;
-import com.fiap.core.domain.workorder.WorkOrder;
-import com.fiap.core.domain.workorder.WorkOrderPart;
-import com.fiap.core.domain.workorder.WorkOrderService;
-import com.fiap.core.domain.workorder.WorkOrderStatus;
+import com.fiap.core.domain.workorder.*;
 import com.fiap.core.exception.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -98,6 +95,7 @@ class AddItemsWorkOrderUseCaseImplTest {
         inOrder.verify(existingOrder).recalculateTotal();
         inOrder.verify(existingOrder).setStatus(WorkOrderStatus.AWAITING_STOCK_CONFIRMATION);
         inOrder.verify(workOrderQueueGateway).publishStockReservation(existingOrder);
+        inOrder.verify(workOrderGateway).saveHistory(any(WorkOrderHistory.class));
         inOrder.verify(workOrderGateway).save(existingOrder);
 
         verifyNoMoreInteractions(workOrderGateway, partGateway, serviceGateway, workOrderQueueGateway);

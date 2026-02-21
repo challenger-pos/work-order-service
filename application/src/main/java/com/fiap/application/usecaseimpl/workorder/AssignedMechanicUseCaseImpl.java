@@ -5,12 +5,14 @@ import com.fiap.application.gateway.workorder.WorkOrderGateway;
 import com.fiap.core.domain.user.User;
 import com.fiap.core.domain.user.UserRole;
 import com.fiap.core.domain.workorder.WorkOrder;
+import com.fiap.core.domain.workorder.WorkOrderHistory;
 import com.fiap.core.domain.workorder.WorkOrderStatus;
 import com.fiap.core.exception.BadRequestException;
 import com.fiap.core.exception.NotFoundException;
 import com.fiap.core.exception.enums.ErrorCodeEnum;
 import com.fiap.usecase.workorder.AssignedMechanicUseCase;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 public class AssignedMechanicUseCaseImpl implements AssignedMechanicUseCase {
@@ -38,5 +40,9 @@ public class AssignedMechanicUseCaseImpl implements AssignedMechanicUseCase {
         workOrder.setStatus(WorkOrderStatus.IN_DIAGNOSIS);
 
         workOrderGateway.save(workOrder);
+
+        WorkOrderHistory history = new WorkOrderHistory(workOrder.getId(), WorkOrderStatus.IN_DIAGNOSIS);
+        history.setCreatedAt(LocalDateTime.now());
+        workOrderGateway.saveHistory(history);
     }
 }

@@ -69,3 +69,7 @@ Alternativamente, collection disponível para consumo via gateway no repositóri
 ## Arquitetura
 
 Disponível em /documentation.
+
+## Cobertura de testes
+
+![img.png](cobertura.png)
