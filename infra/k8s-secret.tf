@@ -19,9 +19,6 @@ resource "kubernetes_secret" "app_secret" {
     SPRING_CLOUD_AWS_CREDENTIALS_ACCESS_KEY = var.aws_access_key
     SPRING_CLOUD_AWS_CREDENTIALS_SECRET_KEY = var.aws_secret_key
 
-    # ===== JWT SECRET =====
-    JWT_SECRET = var.jwt_secret
-
     # ===== AWS REGION & ENDPOINT =====
     AWS_REGION                        = local.region
     SPRING_CLOUD_AWS_REGION_STATIC    = local.aws_region_static

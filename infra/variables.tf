@@ -73,15 +73,6 @@ variable "aws_secret_key" {
 }
 
 # ========================
-# JWT & SEGURANÇA (SENSÍVEL)
-# ========================
-variable "jwt_secret" {
-  description = "JWT secret key para autenticação (SENSÍVEL - não usar em tfvars)"
-  type        = string
-  sensitive   = true
-}
-
-# ========================
 # RECURSOS KUBERNETES (DEFAULTS)
 # ========================
 variable "cpu_request" {
