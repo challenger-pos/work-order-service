@@ -128,3 +128,8 @@ variable "datadog_version" {
   type        = string
   default     = "1.0.0"
 }
+variable "datadog_agent_host" {
+  description = "Hostname do Datadog Agent no cluster (ex.: datadog.datadog-agent.svc.cluster.local)"
+  type        = string
+  default     = "datadog.datadog-agent.svc.cluster.local"
+}
