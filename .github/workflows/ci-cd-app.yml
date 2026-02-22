@@ -3,10 +3,8 @@ name: CI/CD - Spring Boot Build & Docker Hub Deploy
 on:
   push:
     branches:
-      - feat/sonar
       - main
       - homologation
-      - develop
   workflow_dispatch:
 
 env:
