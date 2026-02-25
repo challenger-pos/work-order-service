@@ -5,6 +5,7 @@ import com.fiap.application.gateway.workorder.WorkOrderGateway;
 import com.fiap.core.domain.user.User;
 import com.fiap.core.domain.user.UserRole;
 import com.fiap.core.domain.workorder.WorkOrder;
+import com.fiap.core.domain.workorder.WorkOrderHistory;
 import com.fiap.core.domain.workorder.WorkOrderStatus;
 import com.fiap.core.exception.BadRequestException;
 import com.fiap.core.exception.NotFoundException;
@@ -128,6 +129,7 @@ class AssignedMechanicUseCaseImplTest {
         inOrder.verify(workOrder).setAssignedMechanic(mechanic);
         inOrder.verify(workOrder).setStatus(WorkOrderStatus.IN_DIAGNOSIS);
         inOrder.verify(workOrderGateway).save(workOrder);
+        inOrder.verify(workOrderGateway).saveHistory(any(WorkOrderHistory.class));
 
         verifyNoMoreInteractions(workOrderGateway, userGateway);
     }

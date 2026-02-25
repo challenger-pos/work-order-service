@@ -1,8 +1,11 @@
 package com.fiap.core.domain.workorder;
 
+import lombok.NoArgsConstructor;
+
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+@NoArgsConstructor
 public class WorkOrderHistory {
     private UUID workOrderId;
     private WorkOrder workOrder;

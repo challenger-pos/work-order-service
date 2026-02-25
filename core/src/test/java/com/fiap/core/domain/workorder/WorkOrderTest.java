@@ -3,7 +3,6 @@ package com.fiap.core.domain.workorder;
 import com.fiap.core.domain.customer.Customer;
 import com.fiap.core.domain.part.Money;
 import com.fiap.core.domain.part.Part;
-import com.fiap.core.domain.part.Stock;
 import com.fiap.core.domain.user.User;
 import com.fiap.core.domain.vehicle.Vehicle;
 import com.fiap.core.exception.BadRequestException;
@@ -19,13 +18,12 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class WorkOrderTest {
 
-    private Part partWithStockAndPrice(UUID id, int stockQty, BigDecimal price) throws BusinessRuleException {
+    private Part partWithStockAndPrice(UUID id, BigDecimal price) throws BusinessRuleException {
         return Part.builder()
                 .id(id)
                 .name("P")
                 .description("D")
                 .price(Money.of(price))
-                .stock(Stock.of(stockQty, 0, 0))
                 .build();
     }
 
@@ -49,7 +47,7 @@ class WorkOrderTest {
         UUID vid = UUID.randomUUID();
         UUID uid = UUID.randomUUID();
 
-        Part p = partWithStockAndPrice(UUID.randomUUID(), 10, new BigDecimal("5.00"));
+        Part p = partWithStockAndPrice(UUID.randomUUID(), new BigDecimal("5.00"));
         WorkOrderPart item = wop(p.getId(), p, 2, new BigDecimal("5.00"));
 
         WorkOrder wo = new WorkOrder(cid, vid, uid, List.of(item), null);
@@ -63,8 +61,8 @@ class WorkOrderTest {
 
     @Test
     void recalculateTotalShouldSumPartsOnlyWhenServicesNull() throws BadRequestException, BusinessRuleException {
-        Part p1 = partWithStockAndPrice(UUID.randomUUID(), 10, new BigDecimal("3.50"));
-        Part p2 = partWithStockAndPrice(UUID.randomUUID(), 10, new BigDecimal("2.00"));
+        Part p1 = partWithStockAndPrice(UUID.randomUUID(), new BigDecimal("3.50"));
+        Part p2 = partWithStockAndPrice(UUID.randomUUID(), new BigDecimal("2.00"));
 
         WorkOrderPart i1 = wop(p1.getId(), p1, 3, new BigDecimal("3.50"));
         WorkOrderPart i2 = wop(p2.getId(), p2, 2, new BigDecimal("2.00"));
@@ -75,72 +73,72 @@ class WorkOrderTest {
         assertEquals(new BigDecimal("14.50"), wo.getTotalAmount());
     }
 
-    @Test
-    void reservePartsShouldSubtractStockAndIncreaseReserved() throws BadRequestException, BusinessRuleException {
-        Part p = partWithStockAndPrice(UUID.randomUUID(), 5, new BigDecimal("10.00"));
-        WorkOrderPart i = wop(p.getId(), p, 3, new BigDecimal("10.00"));
+//    @Test
+//    void reservePartsShouldSubtractStockAndIncreaseReserved() throws BadRequestException, BusinessRuleException {
+//        Part p = partWithStockAndPrice(UUID.randomUUID(), 5, new BigDecimal("10.00"));
+//        WorkOrderPart i = wop(p.getId(), p, 3, new BigDecimal("10.00"));
+//
+//        WorkOrder wo = new WorkOrder(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), List.of(i), null);
+//        wo.reserveParts();
+//
+//        assertEquals(2, p.getStock().getStockQuantity());
+//        assertEquals(3, p.getStock().getReservedStock());
+//    }
 
-        WorkOrder wo = new WorkOrder(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), List.of(i), null);
-        wo.reserveParts();
+//    @Test
+//    void reservePartsShouldFailWhenInsufficientStock() throws BusinessRuleException, BadRequestException {
+//        Part p = partWithStockAndPrice(UUID.randomUUID(), 2, new BigDecimal("10.00"));
+//        WorkOrderPart i = wop(p.getId(), p, 3, new BigDecimal("10.00"));
+//
+//        WorkOrder wo = new WorkOrder(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), List.of(i), null);
+//        assertThrows(BadRequestException.class, wo::reserveParts);
+//    }
 
-        assertEquals(2, p.getStock().getStockQuantity());
-        assertEquals(3, p.getStock().getReservedStock());
-    }
-
-    @Test
-    void reservePartsShouldFailWhenInsufficientStock() throws BusinessRuleException, BadRequestException {
-        Part p = partWithStockAndPrice(UUID.randomUUID(), 2, new BigDecimal("10.00"));
-        WorkOrderPart i = wop(p.getId(), p, 3, new BigDecimal("10.00"));
-
-        WorkOrder wo = new WorkOrder(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), List.of(i), null);
-        assertThrows(BadRequestException.class, wo::reserveParts);
-    }
-
-    @Test
-    void approveStockShouldReduceReservedByGroupedQuantities() throws BadRequestException, BusinessRuleException {
-        UUID pid = UUID.randomUUID();
-
-        Part p = partWithStockAndPrice(pid, 10, new BigDecimal("1.00"));
-
-        WorkOrderPart i1 = wop(pid, p, 3, new BigDecimal("1.00"));
-        WorkOrderPart i2 = wop(pid, p, 2, new BigDecimal("1.00"));
-
-        WorkOrder wo = new WorkOrder(
-                UUID.randomUUID(),
-                UUID.randomUUID(),
-                UUID.randomUUID(),
-                List.of(i1, i2),
-                null
-        );
-
-        wo.reserveParts();
-
-        assertEquals(5, p.getStock().getStockQuantity());   // 10 - (3 + 2)
-        assertEquals(5, p.getStock().getReservedStock());   // reservado total
-
-        wo.approveStock();
-
-        assertEquals(0, p.getStock().getReservedStock());   // aprovado => reservado vai a zero
-        assertSame(i1.getPart().getStock(), i2.getPart().getStock()); // mesma referência de estoque
-    }
+//    @Test
+//    void approveStockShouldReduceReservedByGroupedQuantities() throws BadRequestException, BusinessRuleException {
+//        UUID pid = UUID.randomUUID();
+//
+//        Part p = partWithStockAndPrice(pid, 10, new BigDecimal("1.00"));
+//
+//        WorkOrderPart i1 = wop(pid, p, 3, new BigDecimal("1.00"));
+//        WorkOrderPart i2 = wop(pid, p, 2, new BigDecimal("1.00"));
+//
+//        WorkOrder wo = new WorkOrder(
+//                UUID.randomUUID(),
+//                UUID.randomUUID(),
+//                UUID.randomUUID(),
+//                List.of(i1, i2),
+//                null
+//        );
+//
+//        wo.reserveParts();
+//
+//        assertEquals(5, p.getStock().getStockQuantity());   // 10 - (3 + 2)
+//        assertEquals(5, p.getStock().getReservedStock());   // reservado total
+//
+//        wo.approveStock();
+//
+//        assertEquals(0, p.getStock().getReservedStock());   // aprovado => reservado vai a zero
+//        assertSame(i1.getPart().getStock(), i2.getPart().getStock()); // mesma referência de estoque
+//    }
 
 
-    @Test
-    void restoreStockShouldReturnFromReserved() throws BadRequestException, BusinessRuleException {
-        Part p = partWithStockAndPrice(UUID.randomUUID(), 8, new BigDecimal("2.00"));
-        WorkOrderPart i = wop(p.getId(), p, 5, new BigDecimal("2.00"));
-
-        WorkOrder wo = new WorkOrder(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), List.of(i), null);
-        wo.reserveParts();
-
-        assertEquals(3, p.getStock().getStockQuantity());
-        assertEquals(5, p.getStock().getReservedStock());
-
-        wo.restoreStock();
-
-        assertEquals(8, p.getStock().getStockQuantity());
-        assertEquals(0, p.getStock().getReservedStock());
-    }
+//    @Test
+//    void restoreStockShouldReturnFromReserved() throws BadRequestException, BusinessRuleException {
+//        Part p = partWithStockAndPrice(UUID.randomUUID(), 8, new BigDecimal("2.00"));
+//        WorkOrderPart i = wop(p.getId(), p, 5, new BigDecimal("2.00"));
+//
+//        WorkOrder wo = new WorkOrder(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), List.of(i), null);
+//        wo.reserveParts();
+//
+//        assertEquals(3, p.getStock().getStockQuantity());
+//        assertEquals(5, p.getStock().getReservedStock());
+//
+//        wo.restoreStock();
+//
+//        assertEquals(8, p.getStock().getStockQuantity());
+//        assertEquals(0, p.getStock().getReservedStock());
+//    }
 
     @Test
     void secondaryCtorShouldAssignFieldsAsPassed() throws Exception {

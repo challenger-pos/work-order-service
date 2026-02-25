@@ -64,7 +64,6 @@ public class CreateWorkOrderUseCaseImpl implements CreateWorkOrderUseCase {
                 .map(WorkOrderService::getServiceId)
                 .toList();
 
-        // TODO [MS Estoque] Busca de parts continua (para preco/dados cadastrais), mas sem info de stock.
         List<Part> parts = partGateway.findByIds(partIds);
         List<Service> services = serviceGateway.findByIds(servicesIds);
 
@@ -83,25 +82,15 @@ public class CreateWorkOrderUseCaseImpl implements CreateWorkOrderUseCase {
         workOrder.setWorkOrderServices(workOrderServices);
 
         workOrder.recalculateTotal();
-        // TODO [MS Estoque] REMOVER workOrder.reserveParts() - substituir por publish CMD_RESERVAR {workOrderId, itens[{partId, quantity}]} na fila q-estoque-cmd
-        workOrder.reserveParts();
-        // TODO [MS Estoque] REMOVER partGateway.saveAll(parts) - stock gerenciado pelo MS Estoque
-        partGateway.saveAll(parts);
         WorkOrder savedWorkOrder = workOrderGateway.save(workOrder);
 
-        // Salvar histórico com status RECEIVED
-        // TODO [MS Estoque] Mudar: salvar historico com status AWAITING_STOCK (nao RECEIVED).
-        //   Status RECEIVED so sera atribuido quando consumer receber EVT_RESERVADO via q-os-events.
         WorkOrderHistory history = new WorkOrderHistory(savedWorkOrder.getId(), WorkOrderStatus.RECEIVED);
+
         history.setCreatedAt(savedWorkOrder.getCreatedAt());
         workOrderGateway.saveHistory(history);
 
         return savedWorkOrder;
     }
-
-    // TODO [MS Estoque] NOVO CONSUMER necessario: ouvir fila q-os-events
-    //   - EVT_RESERVADO: mudar status da OS para RECEIVED (estoque confirmado, pronta para diagnostico)
-    //   - EVT_FALHA_RESERVA: mudar status da OS para REJECTED_STOCK (OS finalizada, estoque indisponivel)
 
     private List<WorkOrderPart> populateParts(List<Part> parts, Map<UUID, WorkOrderPart> workOrderPartMap, WorkOrder workOrder) {
         return parts.stream()

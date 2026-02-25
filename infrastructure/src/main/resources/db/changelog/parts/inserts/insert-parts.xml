@@ -11,8 +11,8 @@
             <column name="name" value="Pistão"/>
             <column name="description" value="Pistão XPTO"/>
             <column name="price" value="50"/>
-            <column name="stock_quantity" value="1500"/>
-            <column name="minimum_stock" value="10"/>
+<!--            <column name="stock_quantity" value="1500"/>-->
+<!--            <column name="minimum_stock" value="10"/>-->
             <column name="created_at" valueComputed="now()"/>
             <column name="updated_at" valueComputed="now()"/>
         </insert>
@@ -21,8 +21,8 @@
             <column name="name" value="Vela"/>
             <column name="description" value="Vela XPTO"/>
             <column name="price" value="28"/>
-            <column name="stock_quantity" value="1900"/>
-            <column name="minimum_stock" value="10"/>
+<!--            <column name="stock_quantity" value="1900"/>-->
+<!--            <column name="minimum_stock" value="10"/>-->
             <column name="created_at" valueComputed="now()"/>
             <column name="updated_at" valueComputed="now()"/>
         </insert>
@@ -32,8 +32,8 @@
             <column name="name" value="Velas de Ignição"/>
             <column name="description" value="Velas de Ignição Premium"/>
             <column name="price" value="25"/>
-            <column name="stock_quantity" value="500"/>
-            <column name="minimum_stock" value="15"/>
+<!--            <column name="stock_quantity" value="500"/>-->
+<!--            <column name="minimum_stock" value="15"/>-->
             <column name="created_at" valueComputed="now()"/>
             <column name="updated_at" valueComputed="now()"/>
         </insert>
@@ -43,8 +43,8 @@
             <column name="name" value="Filtro de Ar"/>
             <column name="description" value="Filtro de Ar Standard"/>
             <column name="price" value="30"/>
-            <column name="stock_quantity" value="1000"/>
-            <column name="minimum_stock" value="20"/>
+<!--            <column name="stock_quantity" value="1000"/>-->
+<!--            <column name="minimum_stock" value="20"/>-->
             <column name="created_at" valueComputed="now()"/>
             <column name="updated_at" valueComputed="now()"/>
         </insert>
@@ -54,8 +54,8 @@
             <column name="name" value="Disco de Freio"/>
             <column name="description" value="Disco de Freio Ventilado"/>
             <column name="price" value="120"/>
-            <column name="stock_quantity" value="300"/>
-            <column name="minimum_stock" value="5"/>
+<!--            <column name="stock_quantity" value="300"/>-->
+<!--            <column name="minimum_stock" value="5"/>-->
             <column name="created_at" valueComputed="now()"/>
             <column name="updated_at" valueComputed="now()"/>
         </insert>
@@ -65,8 +65,8 @@
             <column name="name" value="Amortecedor"/>
             <column name="description" value="Amortecedor Hidráulico"/>
             <column name="price" value="200"/>
-            <column name="stock_quantity" value="250"/>
-            <column name="minimum_stock" value="8"/>
+<!--            <column name="stock_quantity" value="250"/>-->
+<!--            <column name="minimum_stock" value="8"/>-->
             <column name="created_at" valueComputed="now()"/>
             <column name="updated_at" valueComputed="now()"/>
         </insert>

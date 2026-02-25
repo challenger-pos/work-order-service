@@ -8,8 +8,8 @@ resource "kubernetes_horizontal_pod_autoscaler" "challengeone_hpa" {
 	}
 
 	spec {
-		min_replicas = 2
-		max_replicas = 4
+		min_replicas = 1
+		max_replicas = 2
 
 		scale_target_ref {
 			api_version = "apps/v1"
@@ -17,7 +17,7 @@ resource "kubernetes_horizontal_pod_autoscaler" "challengeone_hpa" {
 			name        = kubernetes_deployment.challengeone_app.metadata[0].name
 		}
 
-		target_cpu_utilization_percentage = 70
+		target_cpu_utilization_percentage = 85
 	}
 }
 

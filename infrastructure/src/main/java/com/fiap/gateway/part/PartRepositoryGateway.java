@@ -30,12 +30,6 @@ public class PartRepositoryGateway implements PartGateway {
     }
 
     @Override
-    public void saveAll(List<Part> parts) {
-        List<PartEntity> partEntities = parts.stream().map(partMapper::toEntity).toList();
-        partEntityRepository.saveAll(partEntities);
-    }
-
-    @Override
     public Part update(Part part) {
         PartEntity entity = partMapper.toEntity(part);
         PartEntity savedEntity = partEntityRepository.save(entity);

@@ -1,7 +1,7 @@
 resource "kubernetes_deployment" "challengeone_app" {
 
   depends_on = [
-    kubernetes_namespace.challengeone 
+    kubernetes_namespace.challengeone
   ]
 
   metadata {
@@ -12,7 +12,7 @@ resource "kubernetes_deployment" "challengeone_app" {
   wait_for_rollout = false
 
   spec {
-    replicas = 2
+    replicas = local.current_env.replicas
 
     selector {
       match_labels = {
@@ -26,9 +26,9 @@ resource "kubernetes_deployment" "challengeone_app" {
           app = "challengeone"
         }
         annotations = {
-          "tags.datadoghq.com/env"     = "dev"
-          "tags.datadoghq.com/service" = "challengeone"
-          "tags.datadoghq.com/version" = "1.0.0"
+          "tags.datadoghq.com/env"          = var.environment
+          "tags.datadoghq.com/service"      = var.datadog_service
+          "tags.datadoghq.com/version"      = var.datadog_version
           "admission.datadoghq.com/enabled" = "true"
         }
       }
@@ -40,9 +40,9 @@ resource "kubernetes_deployment" "challengeone_app" {
         }
 
         init_container {
-          name  = "dd-java-agent-init"
-          image = "curlimages/curl:8.10.1"
-          command = ["sh","-c","curl -L -o /dd/dd-java-agent.jar https://dtdg.co/latest-java-tracer"]
+          name    = "dd-java-agent-init"
+          image   = "curlimages/curl:8.10.1"
+          command = ["sh", "-c", "curl -L -o /dd/dd-java-agent.jar https://dtdg.co/latest-java-tracer"]
           volume_mount {
             name       = "dd-java-agent"
             mount_path = "/dd"
@@ -50,53 +50,58 @@ resource "kubernetes_deployment" "challengeone_app" {
         }
 
         container {
-          name              = "challengeone"
-          image             = "thiagotierre/challengeone:latest"
+          name              = var.app_name
+          image             = var.app_image
           image_pull_policy = "Always"
-          
 
           port {
             container_port = 8080
           }
 
           env_from {
-              secret_ref {
-                name = kubernetes_secret.challengeone_secret.metadata[0].name
-              }
+            secret_ref {
+              name = kubernetes_secret.app_secret.metadata[0].name
             }
+          }
 
           env {
             name  = "SPRING_DATASOURCE_URL"
-            value = "jdbc:postgresql://${data.terraform_remote_state.rds.outputs.rds_endpoint_host}:${data.terraform_remote_state.rds.outputs.db_port}/${data.terraform_remote_state.rds.outputs.db_name}?currentSchema=${var.db_schema}"
+            value = "jdbc:postgresql://${data.terraform_remote_state.rds.outputs.rds_endpoint_host}:${data.terraform_remote_state.rds.outputs.rds_port}/${data.terraform_remote_state.rds.outputs.db_name}?currentSchema=${var.db_schema}"
           }
 
           env {
+            name  = "SPRING_PROFILES_ACTIVE"
+            value = var.environment
+          }
+
+          # Datadog Configuration
+          env {
             name  = "JAVA_TOOL_OPTIONS"
-            value = "-javaagent:/dd/dd-java-agent.jar"
+            value = local.current_env.datadog_enabled ? "-javaagent:/dd/dd-java-agent.jar" : ""
           }
           env {
             name  = "DD_SERVICE"
-            value = "challengeone"
+            value = var.datadog_service
           }
           env {
             name  = "DD_ENV"
-            value = "dev"
+            value = var.environment
           }
           env {
             name  = "DD_VERSION"
-            value = "1.0.0"
+            value = var.datadog_version
           }
           env {
             name  = "DD_LOGS_INJECTION"
-            value = "true"
+            value = local.current_env.datadog_enabled ? "true" : "false"
           }
           env {
             name  = "DD_APPSEC_ENABLED"
-            value = "true"
+            value = local.current_env.datadog_enabled ? "true" : "false"
           }
           env {
             name  = "DD_IAST_ENABLED"
-            value = "true"
+            value = local.current_env.datadog_enabled ? "true" : "false"
           }
           env {
             name  = "DD_AGENT_HOST"
@@ -106,14 +111,35 @@ resource "kubernetes_deployment" "challengeone_app" {
             name  = "DD_DOGSTATSD_PORT"
             value = "8125"
           }
+          # env {
+          #   name  = "DATADOG_STATSD_HOST"
+          #   value = "datadog-agent.datadog-agent.svc.cluster.local"
+          # }
+          env {
+            name  = "DATADOG_STATSD_PORT"
+            value = "8125"
+          }
           env {
             name  = "DATADOG_STATSD_HOST"
-            value = "datadog-agent.datadog-agent.svc.cluster.local"
+            value = var.datadog_agent_host
           }
           env {
             name  = "DATADOG_STATSD_PORT"
             value = "8125"
           }
+          env {
+            name  = "DD_TRACE_DEBUG"
+            value = "false"
+          }
+          env {
+            name  = "DD_TRACE_AGENT_PORT"
+            value = "8126"
+          }
+          env {
+            name  = "DD_AGENT_PORT"
+            value = "8126"
+          }
+
 
           volume_mount {
             name       = "dd-java-agent"
@@ -122,7 +148,7 @@ resource "kubernetes_deployment" "challengeone_app" {
 
           env {
             name  = "DB_SCHEMA"
-            value = "public"
+            value = var.db_schema
           }
 
           startup_probe {
@@ -130,9 +156,9 @@ resource "kubernetes_deployment" "challengeone_app" {
               path = "/api/actuator/health/liveness"
               port = 8080
             }
-            initial_delay_seconds = 120
-            failure_threshold = 30
-            period_seconds    = 10
+            initial_delay_seconds = 180
+            failure_threshold     = 30
+            period_seconds        = 10
           }
 
           liveness_probe {
@@ -141,9 +167,9 @@ resource "kubernetes_deployment" "challengeone_app" {
               port = 8080
             }
             initial_delay_seconds = 60
-            period_seconds  = 30
-            timeout_seconds = 5
-            failure_threshold = 3
+            period_seconds        = 30
+            timeout_seconds       = 5
+            failure_threshold     = 3
           }
 
           readiness_probe {
@@ -157,24 +183,24 @@ resource "kubernetes_deployment" "challengeone_app" {
 
           resources {
             requests = {
-              cpu    = "50m"
-              memory = "512Mi"
+              cpu    = var.cpu_request
+              memory = var.memory_request
             }
             limits = {
-              cpu    = "500m"
-              memory = "1Gi"
+              cpu    = var.cpu_limit
+              memory = var.memory_limit
             }
           }
 
-          security_context {
-            allow_privilege_escalation = false
-            read_only_root_filesystem = false
-          }
+          # security_context {
+          #   allow_privilege_escalation = false
+          #   read_only_root_filesystem = false
+          # }
         }
 
-        security_context {
-          run_as_non_root = false
-        }
+        # security_context {
+        #   run_as_non_root = false
+        # }
       }
     }
 
