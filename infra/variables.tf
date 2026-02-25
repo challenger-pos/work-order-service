@@ -73,15 +73,6 @@ variable "aws_secret_key" {
 }
 
 # ========================
-# JWT & SEGURANÇA (SENSÍVEL)
-# ========================
-variable "jwt_secret" {
-  description = "JWT secret key para autenticação (SENSÍVEL - não usar em tfvars)"
-  type        = string
-  sensitive   = true
-}
-
-# ========================
 # RECURSOS KUBERNETES (DEFAULTS)
 # ========================
 variable "cpu_request" {
@@ -127,4 +118,9 @@ variable "datadog_version" {
   description = "Versão da aplicação para Datadog"
   type        = string
   default     = "1.0.0"
+}
+variable "datadog_agent_host" {
+  description = "Hostname do Datadog Agent no cluster (ex.: datadog.datadog-agent.svc.cluster.local)"
+  type        = string
+  default     = "datadog.datadog-agent.svc.cluster.local"
 }

@@ -1,7 +1,7 @@
 resource "kubernetes_deployment" "challengeone_app" {
 
   depends_on = [
-    kubernetes_namespace.challengeone 
+    kubernetes_namespace.challengeone
   ]
 
   metadata {
@@ -26,9 +26,9 @@ resource "kubernetes_deployment" "challengeone_app" {
           app = "challengeone"
         }
         annotations = {
-          "tags.datadoghq.com/env"     = var.environment
-          "tags.datadoghq.com/service" = var.datadog_service
-          "tags.datadoghq.com/version" = var.datadog_version
+          "tags.datadoghq.com/env"          = var.environment
+          "tags.datadoghq.com/service"      = var.datadog_service
+          "tags.datadoghq.com/version"      = var.datadog_version
           "admission.datadoghq.com/enabled" = "true"
         }
       }
@@ -40,9 +40,9 @@ resource "kubernetes_deployment" "challengeone_app" {
         }
 
         init_container {
-          name  = "dd-java-agent-init"
-          image = "curlimages/curl:8.10.1"
-          command = ["sh","-c","curl -L -o /dd/dd-java-agent.jar https://dtdg.co/latest-java-tracer"]
+          name    = "dd-java-agent-init"
+          image   = "curlimages/curl:8.10.1"
+          command = ["sh", "-c", "curl -L -o /dd/dd-java-agent.jar https://dtdg.co/latest-java-tracer"]
           volume_mount {
             name       = "dd-java-agent"
             mount_path = "/dd"
@@ -111,14 +111,35 @@ resource "kubernetes_deployment" "challengeone_app" {
             name  = "DD_DOGSTATSD_PORT"
             value = "8125"
           }
+          # env {
+          #   name  = "DATADOG_STATSD_HOST"
+          #   value = "datadog-agent.datadog-agent.svc.cluster.local"
+          # }
+          env {
+            name  = "DATADOG_STATSD_PORT"
+            value = "8125"
+          }
           env {
             name  = "DATADOG_STATSD_HOST"
-            value = "datadog-agent.datadog-agent.svc.cluster.local"
+            value = var.datadog_agent_host
           }
           env {
             name  = "DATADOG_STATSD_PORT"
             value = "8125"
           }
+          env {
+            name  = "DD_TRACE_DEBUG"
+            value = "false"
+          }
+          env {
+            name  = "DD_TRACE_AGENT_PORT"
+            value = "8126"
+          }
+          env {
+            name  = "DD_AGENT_PORT"
+            value = "8126"
+          }
+
 
           volume_mount {
             name       = "dd-java-agent"
@@ -136,8 +157,8 @@ resource "kubernetes_deployment" "challengeone_app" {
               port = 8080
             }
             initial_delay_seconds = 180
-            failure_threshold = 30
-            period_seconds    = 10
+            failure_threshold     = 30
+            period_seconds        = 10
           }
 
           liveness_probe {
@@ -146,9 +167,9 @@ resource "kubernetes_deployment" "challengeone_app" {
               port = 8080
             }
             initial_delay_seconds = 60
-            period_seconds  = 30
-            timeout_seconds = 5
-            failure_threshold = 3
+            period_seconds        = 30
+            timeout_seconds       = 5
+            failure_threshold     = 3
           }
 
           readiness_probe {

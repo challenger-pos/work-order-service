@@ -42,11 +42,16 @@
 		<spring.boot.version>3.5.0</spring.boot.version>
 		<lombok.version>1.18.30</lombok.version>
 		<jjwt.version>0.11.5</jjwt.version>
+		<!-- SonarQube Configuration -->
+		<sonar.host.url>https://sonarcloud.io</sonar.host.url>
+		<sonar.organization>challenger-pos</sonar.organization>
+		<sonar.projectKey>challenger-pos_work-order-service</sonar.projectKey>
 		<sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
+		<sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
 		<sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
-		<sonar.jacoco.reportPath>${project.basedir}/../target/jacoco.exec</sonar.jacoco.reportPath>
 		<sonar.language>java</sonar.language>
 		<sonar.coverage.exclusions>**/config/**/*, **/security/**/*</sonar.coverage.exclusions>
+		<sonar.exclusions>**/dto/**, **/entity/**, **/mapper/**</sonar.exclusions>
 	</properties>
 
 	<dependencyManagement>
@@ -224,6 +229,13 @@
 						</goals>
 					</execution>
 				</executions>
+			</plugin>
+
+			<!-- SonarQube Scanner Plugin -->
+			<plugin>
+				<groupId>org.sonarsource.scanner.maven</groupId>
+				<artifactId>sonar-maven-plugin</artifactId>
+				<version>4.0.0.4121</version>
 			</plugin>
 
 		</plugins>
