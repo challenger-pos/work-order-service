@@ -3,44 +3,36 @@ package com.fiap.application.usecaseimpl.workorder;
 import com.fiap.application.gateway.part.PartGateway;
 import com.fiap.application.gateway.service.ServiceGateway;
 import com.fiap.application.gateway.workorder.WorkOrderGateway;
+import com.fiap.application.gateway.workorder.WorkOrderQueueGateway;
 import com.fiap.core.domain.part.Part;
 import com.fiap.core.domain.service.Service;
-import com.fiap.core.domain.workorder.WorkOrder;
-import com.fiap.core.domain.workorder.WorkOrderPart;
-import com.fiap.core.domain.workorder.WorkOrderService;
+import com.fiap.core.domain.workorder.*;
 import com.fiap.core.exception.BadRequestException;
 import com.fiap.core.exception.BusinessRuleException;
 import com.fiap.core.exception.NotFoundException;
 import com.fiap.core.exception.enums.ErrorCodeEnum;
 import com.fiap.usecase.workorder.AddItemsWorkOrderUseCase;
+import lombok.RequiredArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+@RequiredArgsConstructor
 public class AddItemsWorkOrderUseCaseImpl implements AddItemsWorkOrderUseCase {
 
     private final WorkOrderGateway workOrderGateway;
-
-    public AddItemsWorkOrderUseCaseImpl(WorkOrderGateway workOrderGateway, PartGateway partGateway, ServiceGateway serviceGateway) {
-        this.workOrderGateway = workOrderGateway;
-        this.partGateway = partGateway;
-        this.serviceGateway = serviceGateway;
-    }
-
     private final PartGateway partGateway;
     private final ServiceGateway serviceGateway;
+    private final WorkOrderQueueGateway workOrderQueueGateway;
 
     @Override
     public WorkOrder execute(UUID workOrderId, WorkOrder increaseWorkOrder) throws NotFoundException, BusinessRuleException, BadRequestException {
 
         WorkOrder workOrder = workOrderGateway.findById(workOrderId)
                 .orElseThrow(() -> new NotFoundException(ErrorCodeEnum.WORK0001.getMessage(), ErrorCodeEnum.WORK0001.getCode()));
-
-        // TODO [MS Estoque] REMOVER workOrder.restoreStock() - substituir por publish CMD_CANCELAR_RESERVA
-        //   (cancela reserva anterior) + CMD_RESERVAR (nova reserva com itens atualizados) na fila q-estoque-cmd
-        workOrder.restoreStock();
 
         List<UUID> partIds = increaseWorkOrder.getWorkOrderParts().stream()
                 .map(WorkOrderPart::getPartId)
@@ -66,12 +58,14 @@ public class AddItemsWorkOrderUseCaseImpl implements AddItemsWorkOrderUseCase {
         workOrder.getWorkOrderParts().addAll(workOrderParts);
 
         workOrder.recalculateTotal();
-        // TODO [MS Estoque] REMOVER workOrder.reserveParts() - substituido por CMD_RESERVAR na fila q-estoque-cmd
-        workOrder.reserveParts();
-        // TODO [MS Estoque] REMOVER partGateway.saveAll(parts) - stock gerenciado pelo MS Estoque
-        partGateway.saveAll(parts);
-        // TODO [MS Estoque] Mudar status para AWAITING_STOCK (mesma interface/consumer do create).
-        //   Quando EVT_RESERVADO chegar via q-os-events, voltar para IN_DIAGNOSIS.
+
+        workOrder.setStatus(WorkOrderStatus.AWAITING_STOCK_CONFIRMATION);
+        workOrderQueueGateway.publishStockReservation(workOrder);
+
+        WorkOrderHistory history = new WorkOrderHistory(workOrder.getId(), WorkOrderStatus.AWAITING_STOCK_CONFIRMATION);
+        history.setCreatedAt(LocalDateTime.now());
+        workOrderGateway.saveHistory(history);
+
         return workOrderGateway.save(workOrder);
     }
 

@@ -9,14 +9,14 @@ on:
 
 env:
   AWS_REGION: us-east-2
-  ENVIRONMENT: ${{ github.ref_name == 'main' && 'production' || (github.ref_name == 'homologation' && 'homologation' || 'develop') }}
-  IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/challengeone
+  ENVIRONMENT: ${{ github.ref_name == 'main' && 'dev' || (github.ref_name == 'homologation' && 'homologation' || 'dev') }}
+  DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/work-order-service
 
 jobs:
-  build-and-test:
-    name: Build and Test Project
+  unit-tests:
+    name: Run Unit Tests
     runs-on: ubuntu-latest
-    environment: ${{ github.ref_name == 'main' && 'production' || (github.ref_name == 'homologation' && 'homologation' || 'develop') }}
+    environment: ${{ github.ref_name == 'main' && 'dev' || (github.ref_name == 'homologation' && 'homologation' || 'develop') }}
 
     steps:
       - name: Checkout code
@@ -28,15 +28,85 @@ jobs:
           distribution: temurin
           java-version: 21
 
-      - name: Build and Test with Maven
+      - name: Run Unit Tests
+        run: mvn -B test
+
+  build-and-test:
+    name: Build Project
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref_name == 'main' && 'dev' || (github.ref_name == 'homologation' && 'homologation' || 'develop') }}
+    needs: unit-tests
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Build Project
         run: mvn -B clean package
 
+  quality-check:
+    name: SonarQube Quality Gate
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref_name == 'main' && 'dev' || (github.ref_name == 'homologation' && 'homologation' || 'develop') }}
+    needs: build-and-test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Cache SonarQube packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+      - name: Build and analyze with SonarQube
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_WO }}
+        run: mvn -B clean verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.login=$SONAR_TOKEN -Dsonar.projectKey=challenger-pos_work-order-service -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+        continue-on-error: true
+
+      - name: Comment PR with SonarQube results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## 📊 Code Quality Report\n\n✅ SonarQube analysis completed!\n\n[View detailed report](https://sonarcloud.io/dashboard?id=challenger-pos_work-order-service)`
+            });
+        continue-on-error: true
 
   push-and-deploy:
     name: Push Image & Deploy Infra
     runs-on: ubuntu-latest
-    environment: ${{ github.ref_name == 'main' && 'production' || (github.ref_name == 'homologation' && 'homologation' || 'develop') }}
-    needs: build-and-test
+    environment: ${{ github.ref_name == 'main' && 'dev' || (github.ref_name == 'homologation' && 'homologation' || 'develop') }}
+    needs: [build-and-test, quality-check]
 
     env:
       TERRAFORM_DIR: infra/
@@ -75,19 +145,31 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          docker build -t $IMAGE_NAME:${{ env.TAG }} .
-          docker push $IMAGE_NAME:${{ env.TAG }}
-          docker tag $IMAGE_NAME:${{ env.TAG }} $IMAGE_NAME:latest
-          docker push $IMAGE_NAME:latest
+          docker build -t $DOCKER_IMAGE:${{ env.TAG }} .
+          docker push $DOCKER_IMAGE:${{ env.TAG }}
+          docker tag $DOCKER_IMAGE:${{ env.TAG }} $DOCKER_IMAGE:latest
+          docker push $DOCKER_IMAGE:latest
 
       - name: Terraform Init
         working-directory: ${{ env.TERRAFORM_DIR }}
-        run: terraform init -backend-config="key=app/${{ env.ENVIRONMENT }}/terraform.tfstate"
+        run: terraform init -backend-config="key=v4/work-order-service/${{ env.ENVIRONMENT }}/terraform.tfstate"
 
-      - name: Terraform Apply
+      - name: Terraform Plan
         working-directory: ${{ env.TERRAFORM_DIR }}
-        run: terraform apply -auto-approve
+        run: terraform plan -out=tfplan
         env:
           TF_VAR_environment: ${{ env.ENVIRONMENT }}
           TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
-          TF_VAR_image_tag: ${{ env.TAG }}
+          TF_VAR_aws_access_key: ${{ secrets.SQS_AWS_ACCESS_KEY }}
+          TF_VAR_aws_secret_key: ${{ secrets.SQS_AWS_SECRET_KEY }}
+          TF_VAR_app_image: ${{ env.DOCKER_IMAGE }}:${{ env.TAG }}
+
+      - name: Terraform Apply
+        working-directory: ${{ env.TERRAFORM_DIR }}
+        run: terraform apply -auto-approve tfplan
+        env:
+          TF_VAR_environment: ${{ env.ENVIRONMENT }}
+          TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
+          TF_VAR_aws_access_key: ${{ secrets.SQS_AWS_ACCESS_KEY }}
+          TF_VAR_aws_secret_key: ${{ secrets.SQS_AWS_SECRET_KEY }}
+          TF_VAR_app_image: ${{ env.DOCKER_IMAGE }}:${{ env.TAG }}

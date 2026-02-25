@@ -2,6 +2,7 @@ package com.fiap.application.usecaseimpl.workorder;
 
 import com.fiap.application.gateway.part.PartGateway;
 import com.fiap.application.gateway.workorder.WorkOrderGateway;
+import com.fiap.application.gateway.workorder.WorkOrderQueueGateway;
 import com.fiap.core.domain.part.Part;
 import com.fiap.core.domain.workorder.WorkOrder;
 import com.fiap.core.domain.workorder.WorkOrderHistory;
@@ -13,6 +14,7 @@ import com.fiap.core.exception.NotFoundException;
 import com.fiap.core.exception.UnauthorizedException;
 import com.fiap.core.exception.enums.ErrorCodeEnum;
 import com.fiap.usecase.workorder.ApproveWorkOrderUseCase;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -22,16 +24,13 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
+@RequiredArgsConstructor
 public class ApproveWorkOrderUseCaseImpl implements ApproveWorkOrderUseCase {
 
     private static final Logger logger = LoggerFactory.getLogger(ApproveWorkOrderUseCaseImpl.class);
     private final WorkOrderGateway workOrderGateway;
+    private final WorkOrderQueueGateway workOrderQueueGateway;
     private final PartGateway partGateway;
-
-    public ApproveWorkOrderUseCaseImpl(WorkOrderGateway workOrderGateway, PartGateway partGateway) {
-        this.workOrderGateway = workOrderGateway;
-        this.partGateway = partGateway;
-    }
 
     @Override
     public void execute(UUID id, String documentNumber) throws NotFoundException, BadRequestException, UnauthorizedException, ForbiddenException {
@@ -59,21 +58,12 @@ public class ApproveWorkOrderUseCaseImpl implements ApproveWorkOrderUseCase {
             MDC.put("workorder.status", workOrder.getStatus().getDescription());
             logger.info("Approving work order: {} - Parts count: {}", id, workOrder.getWorkOrderParts().size());
 
-            // TODO [MS Estoque] REMOVER workOrder.approveStock() - estoque ja foi reservado pelo MS Estoque.
-            //   Approve apenas muda status para IN_PROGRESS (sem manipular estoque).
-            workOrder.approveStock();
             workOrder.setStatus(WorkOrderStatus.IN_PROGRESS);
             workOrder.setApprovedAt(LocalDateTime.now());
 
-            // TODO [MS Estoque] REMOVER bloco abaixo (extrai parts + partGateway.saveAll) - nao manipula mais estoque diretamente
-            List<Part> parts = workOrder.getWorkOrderParts().stream()
-                    .map(WorkOrderPart::getPart)
-                    .toList();
-
-            partGateway.saveAll(parts);
             workOrderGateway.save(workOrder);
+            workOrderQueueGateway.publishStockDecrease(workOrder);
 
-            // Salvar histórico com status IN_PROGRESS
             WorkOrderHistory history = new WorkOrderHistory(workOrder.getId(), WorkOrderStatus.IN_PROGRESS);
             history.setCreatedAt(LocalDateTime.now());
             workOrderGateway.saveHistory(history);

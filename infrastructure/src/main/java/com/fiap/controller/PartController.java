@@ -53,8 +53,6 @@ public class PartController {
         Part newPart = createPartUseCase.execute(partMapper.toDomain(request));
         if (span != null && newPart != null) {
             span.setTag("part.id", newPart.getId().toString());
-            // TODO [MS Estoque] REMOVER span tag de stock - estoque gerenciado pelo MS Estoque
-            span.setTag("stock.quantity", String.valueOf(newPart.getStock().getStockQuantity()));
         }
         return ResponseEntity.status(HttpStatus.CREATED).body(partMapper.toResponse(newPart));
     }
@@ -70,8 +68,6 @@ public class PartController {
         }
         Part part = findPartByIdUseCase.execute(id);
         if (span != null && part != null) {
-            // TODO [MS Estoque] REMOVER span tag de stock - estoque gerenciado pelo MS Estoque
-            span.setTag("stock.quantity", String.valueOf(part.getStock().getStockQuantity()));
         }
         return ResponseEntity.ok(partMapper.toResponse(part));
     }
@@ -88,8 +84,6 @@ public class PartController {
         Part partToUpdate = partMapper.toDomain(id, request);
         Part updatedPart = updatePartUseCase.execute(partToUpdate);
         if (span != null && updatedPart != null) {
-            // TODO [MS Estoque] REMOVER span tag de stock - estoque gerenciado pelo MS Estoque
-            span.setTag("stock.quantity", String.valueOf(updatedPart.getStock().getStockQuantity()));
         }
         return ResponseEntity.ok(partMapper.toResponse(updatedPart));
     }

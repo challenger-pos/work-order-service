@@ -12,7 +12,7 @@ terraform {
 }
 
 provider "aws" {
-  region = var.region_default
+  region = local.region
 }
 
 provider "kubernetes" {

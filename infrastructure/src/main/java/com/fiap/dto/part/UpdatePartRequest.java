@@ -8,8 +8,5 @@ import java.math.BigDecimal;
 public record UpdatePartRequest(
         @NotBlank String name,
         String description,
-        @NotNull @Min(0) BigDecimal price,
-        @NotNull @Min(0) Integer stockQuantity,
-        @NotNull @Min(0) Integer reservedStock,
-        @NotNull @Min(0) Integer minimumStock
+        @NotNull @Min(0) BigDecimal price
 ) {}
